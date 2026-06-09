@@ -1,0 +1,9 @@
+# Hooked
+
+> Private dispatch application for towing operators. Not a public marketing site.
+
+This project is the operator-facing dispatch app. The public marketing site lives at hookedapp.com. All operator routes require authentication; new operators apply for access via /apply.
+
+## Pages
+
+- [Request Service](/request/{companyId}): Public roadside assistance and tow request form for customers. No account required.

@@ -1,0 +1,662 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Plus,
+  MapPin,
+  Phone,
+  Car,
+  Clock,
+  AlertTriangle,
+  Sparkles,
+  X,
+  CheckCircle2,
+  ShieldAlert,
+  MessageSquare,
+  Wand2,
+  Loader2,
+} from "lucide-react";
+import { useDispatch } from "../../lib/dispatch-store";
+import type { Driver, Job, JobType, JobPriority, JobStatus } from "../../lib/seed-data";
+import { JOB_PRESETS } from "../../lib/seed-data";
+import { JobDetailModal } from "../../components/job-detail-modal";
+import { DispatchMap } from "../../components/dispatch-map";
+import { JobTimeline, STATUS_COLOR } from "../../components/job-timeline";
+import { parseSmartNotes } from "../../lib/ai.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { cn } from "../../lib/utils";
+import { VinLookup } from "../../components/vin-lookup";
+
+export const Route = createFileRoute("/_authenticated/")({
+  head: () => ({
+    meta: [
+      { title: "Dispatch Board — Hooked" },
+      { name: "description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
+      { property: "og:title", content: "Dispatch Board — Hooked" },
+      { property: "og:description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
+      { property: "og:url", content: "https://hookaidashboard.com/" },
+    ],
+  }),
+  component: DispatchBoard,
+});
+
+function relMin(ts: number) {
+  const m = Math.max(0, Math.round((Date.now() - ts) / 60_000));
+  return m < 1 ? "now" : `${m}m ago`;
+}
+
+function DispatchBoard() {
+  const { jobs, drivers, selectedJobId, setSelectedJob, assignJob, bestDriverFor, detailJobId, openJobDetail, backupAlerts, dismissBackup, smsByJob, updateJobStatus } = useDispatch();
+  const [newJobOpen, setNewJobOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"queue" | "map" | "drivers">("queue");
+  const detailJob = jobs.find((j) => j.id === detailJobId) ?? null;
+
+  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? null;
+  const stalled = jobs.filter(
+    (j) => j.status === "Unassigned" && Date.now() - j.receivedAt > 5 * 60_000,
+  );
+
+  const suggestion = selectedJob ? bestDriverFor(selectedJob.id) : null;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      {backupAlerts.map((a) => (
+        <div key={a.id} className="flex items-center gap-2 border-b border-urgent/40 bg-urgent/15 px-5 py-2 text-xs text-foreground">
+          <ShieldAlert className="h-4 w-4 shrink-0 text-urgent" />
+          <span><b className="text-urgent">BACKUP REQUESTED</b> — {a.driverName} needs help at <b>{a.location}</b></span>
+          <button
+            onClick={() => dismissBackup(a.id)}
+            className="ml-auto rounded-md border border-urgent/40 px-2 py-0.5 text-[11px] font-semibold text-urgent hover:bg-urgent/20"
+          >
+            Acknowledge
+          </button>
+        </div>
+      ))}
+      {stalled.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-urgent/30 bg-urgent/10 px-5 py-2 text-xs text-foreground">
+          <AlertTriangle className="h-4 w-4 text-urgent" />
+          <b>{stalled.length}</b> job{stalled.length > 1 ? "s" : ""} unassigned 5+ min —
+          <span className="text-muted-foreground">
+            {stalled.map((j) => j.caller).join(", ")}
+          </span>
+        </div>
+      )}
+
+      {/* Mobile tab switcher */}
+      <div className="flex shrink-0 border-b border-border bg-surface md:hidden">
+        {([
+          { k: "queue", label: `Queue (${jobs.length})` },
+          { k: "map", label: "Map" },
+          { k: "drivers", label: `Drivers (${drivers.filter((d) => d.status === "Available").length})` },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            onClick={() => setMobileTab(t.k)}
+            className={cn(
+              "flex-1 px-2 py-2.5 text-xs font-semibold transition-colors",
+              mobileTab === t.k ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-px bg-border md:grid-cols-[300px_1fr] lg:grid-cols-[340px_1fr_300px]">
+        {/* Job queue */}
+        <section className={cn("min-h-0 flex-col bg-background md:flex", mobileTab === "queue" ? "flex" : "hidden")}>
+          <header className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Queue</div>
+              <div className="text-sm font-semibold">{jobs.length} active jobs</div>
+            </div>
+            <button
+              onClick={() => setNewJobOpen(true)}
+              className="flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-3.5 w-3.5" /> New
+            </button>
+          </header>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+            {jobs.map((j) => (
+              <JobCard
+                key={j.id}
+                job={j}
+                driver={drivers.find((d) => d.id === j.assignedDriverId)}
+                selected={j.id === selectedJobId}
+                smsCount={smsByJob[j.id]?.length ?? 0}
+                onSetStatus={(s) => updateJobStatus(j.id, s)}
+                onClick={() => {
+                  setSelectedJob(j.id);
+                  openJobDetail(j.id);
+                }}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Map */}
+        <section className={cn("min-h-0 flex-col bg-background md:flex", mobileTab === "map" ? "flex" : "hidden")}>
+          <header className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Live map</div>
+              <div className="text-sm font-semibold">Bay Area · {drivers.length} drivers</div>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <LegendDot color="success" label="Available" />
+              <LegendDot color="warning" label="En route" />
+              <LegendDot color="urgent" label="Urgent" />
+            </div>
+          </header>
+          <DispatchMap jobs={jobs} drivers={drivers} selectedJob={selectedJob} />
+          {selectedJob && (
+            <div className="border-t border-border bg-surface p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Selected</div>
+                  <div className="truncate text-sm font-semibold">
+                    {selectedJob.caller} — {selectedJob.type}
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">{selectedJob.location}</div>
+                </div>
+                {suggestion && selectedJob.status === "Unassigned" && (
+                  <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <div>
+                      <div className="font-semibold text-primary">Best match: {suggestion.name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {suggestion.distanceMi} mi · Truck {suggestion.truck}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => assignJob(selectedJob.id, suggestion.id)}
+                      className="ml-2 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      Assign
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Drivers */}
+        <section className={cn("min-h-0 flex-col bg-background lg:flex", mobileTab === "drivers" ? "flex md:hidden lg:flex" : "hidden")}>
+          <header className="border-b border-border px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Drivers</div>
+            <div className="text-sm font-semibold">
+              {drivers.filter((d) => d.status === "Available").length} available
+            </div>
+          </header>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+            {drivers.map((d) => (
+              <DriverRow
+                key={d.id}
+                driver={d}
+                canAssign={
+                  selectedJob?.status === "Unassigned" && d.status === "Available"
+                }
+                onAssign={() => selectedJob && assignJob(selectedJob.id, d.id)}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {newJobOpen && <NewJobModal onClose={() => setNewJobOpen(false)} />}
+      {detailJob && <JobDetailModal job={detailJob} onClose={() => openJobDetail(null)} />}
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: "success" | "warning" | "urgent"; label: string }) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className={cn("h-2 w-2 rounded-full", color === "success" && "bg-success", color === "warning" && "bg-warning", color === "urgent" && "bg-urgent")} />
+      {label}
+    </div>
+  );
+}
+
+const PRIORITY_STYLES: Record<JobPriority, string> = {
+  Urgent: "bg-urgent/15 text-urgent border-urgent/30",
+  Standard: "bg-warning/15 text-warning border-warning/30",
+  Low: "bg-muted text-muted-foreground border-border",
+};
+
+function JobCard({
+  job,
+  driver,
+  selected,
+  smsCount,
+  onSetStatus,
+  onClick,
+}: {
+  job: Job;
+  driver?: Driver;
+  selected: boolean;
+  smsCount: number;
+  onSetStatus: (s: JobStatus) => void;
+  onClick: () => void;
+}) {
+  const color = STATUS_COLOR[job.status];
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
+      className={cn(
+        "block w-full cursor-pointer rounded-lg border border-l-4 bg-surface p-3 text-left transition-all",
+        color.ring,
+        color.tint,
+        selected
+          ? "border-primary glow-primary"
+          : "border-border hover:border-primary/40 hover:bg-surface-2",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            {job.isIncoming && (
+              <span className="shrink-0 rounded-sm bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-300">
+                Incoming
+              </span>
+            )}
+            <div className="truncate text-sm font-semibold text-foreground">{job.caller}</div>
+          </div>
+          <div className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+            <MapPin className="h-3 w-3" /> {job.location}
+          </div>
+        </div>
+        <span
+          className={cn(
+            "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+            PRIORITY_STYLES[job.priority],
+          )}
+        >
+          {job.priority}
+        </span>
+      </div>
+      <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1"><Car className="h-3 w-3" />{job.vehicle.split(" ").slice(-1)[0]}</span>
+        <span className="rounded bg-background px-1.5 py-0.5 font-mono">{job.type}</span>
+        {smsCount > 0 && (
+          <span className="flex items-center gap-1 rounded bg-background px-1.5 py-0.5">
+            <MessageSquare className="h-3 w-3" />{smsCount}
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-1"><Clock className="h-3 w-3" />{relMin(job.receivedAt)}</span>
+      </div>
+      {driver && (
+        <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+          <span className={cn("h-1.5 w-1.5 rounded-full", color.dot)} />
+          <span className="text-muted-foreground">{job.status === "OnScene" ? "On scene" : `En route · ETA ${driver.etaMin}m`}</span>
+          <span className="ml-auto font-mono text-foreground">{driver.name}</span>
+        </div>
+      )}
+      <div className="mt-2 border-t border-border pt-2">
+        <JobTimeline job={job} onSetStatus={onSetStatus} compact />
+      </div>
+    </div>
+  );
+}
+
+const DRIVER_STATUS_STYLE: Record<Driver["status"], { dot: string; label: string }> = {
+  Available: { dot: "bg-success", label: "Available" },
+  EnRoute: { dot: "bg-warning", label: "En route" },
+  OnScene: { dot: "bg-warning", label: "On scene" },
+  Off: { dot: "bg-muted", label: "Off duty" },
+};
+
+function DriverRow({
+  driver,
+  canAssign,
+  onAssign,
+}: {
+  driver: Driver;
+  canAssign: boolean;
+  onAssign: () => void;
+}) {
+  const s = DRIVER_STATUS_STYLE[driver.status];
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border bg-surface p-3 transition-colors",
+        canAssign && "hover:border-primary",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background font-mono text-xs font-semibold">
+          {driver.name.split(" ").map((n) => n[0]).join("")}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold">{driver.name}</div>
+          <div className="text-[11px] text-muted-foreground">Truck {driver.truck} · {driver.distanceMi} mi</div>
+        </div>
+        <span className={cn("h-2 w-2 rounded-full", s.dot)} />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{s.label}{driver.status === "EnRoute" && ` · ETA ${driver.etaMin}m`}</span>
+        {canAssign && (
+          <button
+            onClick={onAssign}
+            className="rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Assign
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Legacy placeholder MapPane removed — replaced by <DispatchMap />.
+
+
+const JOB_TYPES: JobType[] = ["Tow", "Lockout", "Jumpstart", "Tire", "Winch"];
+const PRIORITIES: JobPriority[] = ["Low", "Standard", "Urgent"];
+
+function NewJobModal({ onClose }: { onClose: () => void }) {
+  const { createJob, drivers, assignJob } = useDispatch();
+  const parseFn = useServerFn(parseSmartNotes);
+  const [type, setType] = useState<JobType>("Tow");
+  const [priority, setPriority] = useState<JobPriority>("Standard");
+  const [form, setForm] = useState({
+    caller: "",
+    phone: "",
+    location: "",
+    vin: "",
+    year: "",
+    make: "",
+    model: "",
+    notes: "",
+  });
+  const [smartText, setSmartText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parseErr, setParseErr] = useState<string | null>(null);
+  const [assignPickerJob, setAssignPickerJob] = useState<{ id: string } | null>(null);
+
+  const preset = JOB_PRESETS[type];
+
+  async function runParse() {
+    if (!smartText.trim()) return;
+    setParsing(true);
+    setParseErr(null);
+    try {
+      const res = await parseFn({ data: { text: smartText } });
+      if (!res.ok) {
+        setParseErr(res.error);
+        return;
+      }
+      const p = res.parsed;
+      setForm((f) => ({
+        ...f,
+        caller: p.caller ?? f.caller,
+        phone: p.phone ?? f.phone,
+        location: p.location ?? f.location,
+        year: p.vehicleYear ? String(p.vehicleYear) : f.year,
+        make: p.vehicleMake ?? f.make,
+        model: p.vehicleModel ?? f.model,
+        notes: p.cleanedNotes || f.notes,
+      }));
+      if (p.serviceType) setType(p.serviceType);
+      if (p.priority) setPriority(p.priority);
+    } catch (e: any) {
+      setParseErr(e?.message || "Parse failed");
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  async function save(autoAssign: boolean) {
+    if (!form.caller || !form.location) return;
+    const vehicle = [form.year, form.make, form.model].filter(Boolean).join(" ");
+    const job = await createJob({
+      caller: form.caller,
+      phone: form.phone,
+      location: form.location,
+      vehicle,
+      notes: form.notes,
+      type,
+      priority,
+    });
+    if (!job) {
+      onClose();
+      return;
+    }
+    if (autoAssign) {
+      setAssignPickerJob({ id: job.id });
+    } else {
+      onClose();
+    }
+  }
+
+  if (assignPickerJob) {
+    return (
+      <AssignPicker
+        jobId={assignPickerJob.id}
+        drivers={drivers}
+        onClose={onClose}
+        onAssign={async (driverId) => {
+          await assignJob(assignPickerJob.id, driverId);
+          onClose();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 p-3 backdrop-blur-sm sm:items-center">
+      <div className="flex max-h-[95vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Quick entry</div>
+            <div className="text-base font-semibold">New job</div>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {/* Smart Notes */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Smart Notes — describe everything, AI fills it in
+            </label>
+            <textarea
+              value={smartText}
+              onChange={(e) => setSmartText(e.target.value)}
+              rows={2}
+              className={cn(inputCls, "mt-2 text-sm")}
+              placeholder="e.g. Amanda at 415 555 0132, blue 2019 Honda Civic, flat tire on shoulder of I-280 mile 42"
+            />
+            {parseErr && <div className="mt-1 text-[11px] text-urgent">{parseErr}</div>}
+            <button
+              type="button"
+              onClick={runParse}
+              disabled={parsing || !smartText.trim()}
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Parse with AI
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Customer name">
+              <input required value={form.caller} onChange={(e) => setForm({ ...form, caller: e.target.value })} className={cn(inputCls, "text-base")} placeholder="Jane Smith" />
+            </Field>
+            <Field label="Phone">
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={cn(inputCls, "text-base")} placeholder="(555) 123-4567" />
+            </Field>
+          </div>
+          <Field label="Location">
+            <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className={cn(inputCls, "text-base")} placeholder="I-280 N, mile 42" />
+          </Field>
+          <Field label="VIN (optional — auto-fills vehicle)">
+            <VinLookup
+              vin={form.vin}
+              onVinChange={(v) => setForm({ ...form, vin: v })}
+              onResult={(r) => setForm((f) => ({
+                ...f,
+                year: r.year ? String(r.year) : f.year,
+                make: r.make ?? f.make,
+                model: r.model ?? f.model,
+              }))}
+            />
+          </Field>
+          <Field label="Vehicle (Year / Make / Model)">
+            <div className="grid grid-cols-3 gap-2">
+              <input value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value.replace(/\D/g, "").slice(0, 4) })} className={cn(inputCls, "text-base")} placeholder="2019" inputMode="numeric" />
+              <input value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} className={cn(inputCls, "text-base")} placeholder="Honda" />
+              <input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={cn(inputCls, "text-base")} placeholder="Civic" />
+            </div>
+          </Field>
+
+          <Field label="Service type">
+            <div className="grid grid-cols-3 gap-2">
+              {JOB_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType(t)}
+                  className={cn(
+                    "rounded-lg border px-3 py-3 text-sm font-semibold transition-colors",
+                    type === t ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {t === "Tire" ? "Flat Tire" : t === "Winch" ? "Winch" : t}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Priority">
+            <div className="grid grid-cols-3 gap-2">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPriority(p)}
+                  className={cn(
+                    "rounded-md border px-2 py-2 text-xs font-medium transition-colors",
+                    priority === p ? cn(PRIORITY_STYLES[p], "border") : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Notes (optional)">
+            <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputCls} placeholder="Anything driver should know" />
+          </Field>
+
+          <div className="rounded-md border border-border bg-background p-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Estimated price</span>
+              <span className="font-mono text-sm font-semibold text-primary">${preset.price}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Estimated duration</span>
+              <span className="font-mono text-sm font-semibold">{preset.durationMin} min</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface p-3">
+          <button
+            type="button"
+            onClick={() => save(false)}
+            disabled={!form.caller || !form.location}
+            className="rounded-lg border border-border px-3 py-3 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
+          >
+            Save & Assign Later
+          </button>
+          <button
+            type="button"
+            onClick={() => save(true)}
+            disabled={!form.caller || !form.location}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Save & Assign Now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AssignPicker({
+  jobId,
+  drivers,
+  onAssign,
+  onClose,
+}: {
+  jobId: string;
+  drivers: Driver[];
+  onAssign: (driverId: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const available = useMemo(
+    () => [...drivers].filter((d) => d.status === "Available").sort((a, b) => a.distanceMi - b.distanceMi),
+    [drivers],
+  );
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 p-3 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Assign driver</div>
+            <div className="text-sm font-semibold">Closest available</div>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1.5 text-muted-foreground hover:bg-accent">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="max-h-[60vh] space-y-2 overflow-y-auto p-3">
+          {available.length === 0 && (
+            <div className="rounded-md border border-border bg-background p-4 text-center text-sm text-muted-foreground">
+              No available drivers right now. Job saved unassigned.
+            </div>
+          )}
+          {available.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => onAssign(d.id)}
+              className="flex w-full items-center justify-between rounded-lg border border-border bg-background p-3 text-left hover:border-primary hover:bg-primary/5"
+            >
+              <div>
+                <div className="text-sm font-semibold">{d.name}</div>
+                <div className="text-[11px] text-muted-foreground">Truck {d.truck} · {d.distanceMi} mi</div>
+              </div>
+              <span className="rounded-md bg-primary/15 px-2 py-1 text-xs font-semibold text-primary">Assign</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} className="w-full border-t border-border py-3 text-sm font-medium text-muted-foreground hover:bg-accent">
+          Skip for now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const inputCls =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none";
+
+// Silence unused (Phone icon kept for future)
+void Phone;
