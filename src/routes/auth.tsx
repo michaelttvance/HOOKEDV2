@@ -89,7 +89,7 @@ function AuthPage() {
     }
   }
 
-  async function oauthSignIn(provider: "google" | "apple") {
+  async function oauthSignIn(provider: "google" | "azure") {
     setError(null);
     setNotice(null);
     setLoading(true);
@@ -209,14 +209,17 @@ function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => oauthSignIn("apple")}
+              onClick={() => oauthSignIn("azure")}
               disabled={loading}
               className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm font-semibold text-white transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-60"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M16.365 1.43c0 1.14-.42 2.18-1.25 3.12-1 1.12-2.21 1.77-3.53 1.66-.16-1.12.4-2.28 1.2-3.16.9-1 2.42-1.74 3.58-1.78.02.05.02.1.02.16zM20.5 17.27c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.52-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.06-1.78-4.05-3.34-2.77-4.36-3.06-9.48-1.35-12.2 1.21-1.93 3.12-3.06 4.92-3.06 1.83 0 2.98 1 4.49 1 1.47 0 2.36-1.01 4.48-1.01 1.6 0 3.3.87 4.51 2.38-3.97 2.17-3.32 7.84-1.25 9.75z"/>
+              <svg className="h-4 w-4" viewBox="0 0 23 23" aria-hidden="true">
+                <path fill="#F25022" d="M1 1h10v10H1z"/>
+                <path fill="#00A4EF" d="M1 12h10v10H1z"/>
+                <path fill="#7FBA00" d="M12 1h10v10H12z"/>
+                <path fill="#FFB900" d="M12 12h10v10H12z"/>
               </svg>
-              Apple
+              Microsoft
             </button>
           </div>
 
