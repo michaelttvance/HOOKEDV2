@@ -67,6 +67,7 @@ export function mapDriver(r: Row): Driver {
     lng: (r.location_lng as number) ?? 50,
     distanceMi: Number(r.distance_mi ?? 5),
     certifications: ((r.certifications as string[] | null) ?? []) as Certification[],
+    userId: (r.user_id as string | null) ?? undefined,
   };
 }
 

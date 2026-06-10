@@ -37,6 +37,7 @@ export interface Driver {
   lng: number;
   distanceMi: number;
   certifications?: Certification[];
+  userId?: string; // auth user linked to this driver (driver login)
 }
 
 export interface JobPhoto {

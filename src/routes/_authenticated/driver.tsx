@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { updateDriverLocation } from "../../lib/driver.functions";
 import {
   Phone,
@@ -8,9 +10,12 @@ import {
   Car,
   CheckCircle2,
   Truck,
+  Power,
+  Coffee,
 } from "lucide-react";
 import { useDispatch } from "../../lib/dispatch-store";
-import type { JobStatus } from "../../lib/seed-data";
+import { useAuth } from "../../lib/use-auth";
+import type { Driver, Job, JobStatus } from "../../lib/seed-data";
 import { DriverMiniMap } from "../../components/driver-mini-map";
 import {
   PreJobChecklist,
@@ -41,42 +46,142 @@ const FLOW: { key: JobStatus; label: string }[] = [
 ];
 
 function DriverView() {
-  const { jobs, drivers, activeDriverJobId, setActiveDriverJob, updateJobStatus } = useDispatch();
-  const [notes, setNotes] = useState("");
-  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
+  const { profile, user } = useAuth();
+  const isDriverRole = profile.role === "driver";
+  return isDriverRole ? <RealDriverApp userId={user?.id ?? null} /> : <DispatcherSimulator />;
+}
 
+/* ─────────────────────────────────────────────────────────────────
+   Real driver login — full-screen mobile interface, scoped to ME
+   ───────────────────────────────────────────────────────────────── */
+
+function RealDriverApp({ userId }: { userId: string | null }) {
+  const { jobs, drivers } = useDispatch();
+  const qc = useQueryClient();
+  const { profile } = useAuth();
+  const me = drivers.find((d) => d.userId === userId) ?? null;
+
+  const myJobs = me ? jobs.filter((j) => j.assignedDriverId === me.id) : [];
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const job = myJobs.find((j) => j.id === activeId) ?? myJobs[0] ?? null;
+
+  const [togglingShift, setTogglingShift] = useState(false);
+  const onShift = me ? me.status !== "Off" : false;
+  const busy = me ? me.status === "EnRoute" || me.status === "OnScene" : false;
+
+  async function toggleShift() {
+    if (!me || busy || togglingShift) return;
+    setTogglingShift(true);
+    try {
+      await supabase
+        .from("drivers")
+        .update({ status: onShift ? "off" : "available" })
+        .eq("id", me.id);
+      qc.invalidateQueries({ queryKey: ["drivers", profile.companyId] });
+    } finally {
+      setTogglingShift(false);
+    }
+  }
+
+  useDriverGps(job, me?.id ?? null);
+
+  if (!me) {
+    return (
+      <div className="flex h-full items-center justify-center p-8 text-center">
+        <div className="max-w-xs">
+          <Truck className="mx-auto h-10 w-10 text-muted-foreground" />
+          <div className="mt-4 text-sm font-semibold">No driver profile linked yet</div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Ask your dispatcher to invite you as a driver, or to link your account to a truck.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto bg-background">
+      <div className="mx-auto max-w-md p-4 pb-10">
+        {/* Driver header */}
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-border bg-surface p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold">{me.name}</div>
+              <div className="text-xs text-muted-foreground">Truck {me.truck}</div>
+            </div>
+          </div>
+          <button
+            onClick={toggleShift}
+            disabled={busy || togglingShift}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all active:scale-95",
+              onShift
+                ? "bg-success/15 text-success"
+                : "bg-muted text-muted-foreground",
+              busy && "cursor-not-allowed opacity-60",
+            )}
+            title={busy ? "Finish your current job before going off shift" : undefined}
+          >
+            {onShift ? <Power className="h-3.5 w-3.5" /> : <Coffee className="h-3.5 w-3.5" />}
+            {onShift ? "On shift" : "Off shift"}
+          </button>
+        </div>
+
+        {/* My job queue (if more than one) */}
+        {myJobs.length > 1 && (
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            {myJobs.map((j) => (
+              <button
+                key={j.id}
+                onClick={() => setActiveId(j.id)}
+                className={cn(
+                  "shrink-0 rounded-xl border px-3 py-2 text-left text-xs transition-colors",
+                  j.id === job?.id
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border bg-surface text-muted-foreground",
+                )}
+              >
+                <div className="font-semibold">{j.caller}</div>
+                <div className="text-[10px]">{j.type}</div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!job ? (
+          <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-success" />
+            <div className="mt-3 text-sm font-semibold">
+              {onShift ? "You're clear — no jobs assigned" : "You're off shift"}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {onShift
+                ? "Dispatch will send your next job here. Keep this page open."
+                : "Go on shift to receive jobs from dispatch."}
+            </p>
+          </div>
+        ) : (
+          <JobScreen job={job} driver={me} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Dispatcher view — phone-frame simulator across all drivers
+   ───────────────────────────────────────────────────────────────── */
+
+function DispatcherSimulator() {
+  const { jobs, drivers, activeDriverJobId, setActiveDriverJob } = useDispatch();
   const assigned = jobs.filter((j) => j.assignedDriverId);
   const job = jobs.find((j) => j.id === activeDriverJobId) ?? assigned[0] ?? null;
-  const driver = job ? drivers.find((d) => d.id === job.assignedDriverId) : null;
-  const isChecklistDone = job ? !!checklistDone[job.id] : false;
+  const driver = job ? drivers.find((d) => d.id === job.assignedDriverId) ?? null : null;
 
-  // Live GPS — watch position while there's an active, non-complete job
-  const driverIdForWatch = driver?.id ?? null;
-  const shouldWatch = !!job && job.status !== "Complete" && !!driverIdForWatch;
-  const lastSentRef = useRef<{ lat: number; lng: number; t: number } | null>(null);
-  useEffect(() => {
-    if (!shouldWatch || !driverIdForWatch) return;
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const now = Date.now();
-        const last = lastSentRef.current;
-        // throttle: skip if <10s since last AND moved <~15m
-        if (last && now - last.t < 10_000) {
-          const dLat = Math.abs(lat - last.lat);
-          const dLng = Math.abs(lng - last.lng);
-          if (dLat < 0.00015 && dLng < 0.00015) return;
-        }
-        lastSentRef.current = { lat, lng, t: now };
-        updateDriverLocation({ data: { driverId: driverIdForWatch, lat, lng } }).catch(() => {});
-      },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [shouldWatch, driverIdForWatch]);
+  useDriverGps(job, driver?.id ?? null);
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-background">
@@ -104,6 +209,10 @@ function DriverView() {
             );
           })}
         </div>
+        <div className="border-t border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
+          This is the dispatcher preview. Drivers who log in with a driver account get this
+          interface full-screen, scoped to their own jobs.
+        </div>
       </div>
 
       {/* Phone frame */}
@@ -120,121 +229,170 @@ function DriverView() {
               No active jobs. You're clear.
             </div>
           ) : (
-            <div className="space-y-5 p-5">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Current job</div>
-                  <span className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
-                    job.status === "OnScene" ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
-                  )}>
-                    {job.status === "OnScene" ? "On scene" : job.status === "EnRoute" ? "En route" : job.status === "Assigned" ? "Assigned" : job.status}
-                  </span>
-                </div>
-                <div className="mt-2 text-2xl font-bold leading-tight">{job.caller}</div>
-                <div className="mt-0.5 font-mono text-sm text-muted-foreground">{job.phone}</div>
-              </div>
-
-              <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-base">
-                <Row icon={MapPin}>
-                  <span className="text-base font-medium leading-snug">{job.location}</span>
-                </Row>
-                <Row icon={Car}>
-                  <span className="text-sm">{job.vehicle}</span>
-                </Row>
-                <Row icon={Navigation}>
-                  <span className="font-mono text-sm">{job.type}</span>
-                  <span className="ml-1 text-sm text-muted-foreground">· ${job.estPrice} · {job.estDurationMin} min</span>
-                </Row>
-                {driver && (
-                  <Row icon={Truck}>
-                    <span className="text-sm">Truck <span className="font-mono">{driver.truck}</span> · ETA {driver.etaMin}m</span>
-                  </Row>
-                )}
-              </div>
-
-              <DriverMiniMap job={job} />
-
-              <PreJobChecklist
-                jobId={job.id}
-                done={isChecklistDone}
-                onChange={(d) => setChecklistDone((prev) => ({ ...prev, [job.id]: d }))}
-              />
-
-              {/* Big thumb-friendly status flow */}
-              <div className="grid grid-cols-3 gap-2">
-                {FLOW.map((step) => {
-                  const isCurrent = job.status === step.key;
-                  const isComplete = step.key === "Complete";
-                  const blocked = step.key === "EnRoute" && !isChecklistDone && !isCurrent;
-                  return (
-                    <button
-                      key={step.key}
-                      disabled={blocked}
-                      onClick={() => updateJobStatus(job.id, step.key)}
-                      className={cn(
-                        "rounded-xl border px-2 py-5 text-sm font-bold leading-tight transition-all active:scale-95",
-                        blocked && "cursor-not-allowed opacity-40",
-                        isCurrent
-                          ? "border-primary bg-primary text-primary-foreground glow-primary"
-                          : isComplete
-                            ? "border-success/40 bg-success/10 text-success hover:bg-success/20"
-                            : "border-border bg-surface text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {step.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {!isChecklistDone && (
-                <div className="-mt-3 text-center text-[11px] text-muted-foreground">
-                  Complete the pre-trip checklist to go En Route
-                </div>
-              )}
-
-              <RequestBackupButton job={job} />
-
-              {job.status === "OnScene" && <SignaturePad job={job} />}
-
-              <NavigateMenu location={job.location} />
-
-              <a
-                href={`tel:${job.phone.replace(/\D/g, "")}`}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-4 text-base font-bold text-success-foreground active:scale-[0.98]"
-              >
-                <Phone className="h-5 w-5" /> Call customer
-              </a>
-
-
-              <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Notes
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Customer asked to wait at lobby…"
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
-              </div>
-
-              <VehicleConditionPhotos job={job} />
-
-              <DriverEarningsPanel driver={driver} />
-
-              {job.notes && (
-                <div className="rounded-md border border-border bg-surface p-2 text-xs text-muted-foreground">
-                  <b className="text-foreground">Dispatch note:</b> {job.notes}
-                </div>
-              )}
+            <div className="p-5">
+              <JobScreen job={job} driver={driver} />
             </div>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Shared job screen (used by both real driver app & simulator)
+   ───────────────────────────────────────────────────────────────── */
+
+function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
+  const { updateJobStatus } = useDispatch();
+  const [notes, setNotes] = useState("");
+  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
+  const isChecklistDone = !!checklistDone[job.id];
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Current job</div>
+          <span className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+            job.status === "OnScene" ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
+          )}>
+            {job.status === "OnScene" ? "On scene" : job.status === "EnRoute" ? "En route" : job.status === "Assigned" ? "Assigned" : job.status}
+          </span>
+        </div>
+        <div className="mt-2 text-2xl font-bold leading-tight">{job.caller}</div>
+        <div className="mt-0.5 font-mono text-sm text-muted-foreground">{job.phone}</div>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-base">
+        <Row icon={MapPin}>
+          <span className="text-base font-medium leading-snug">{job.location}</span>
+        </Row>
+        <Row icon={Car}>
+          <span className="text-sm">{job.vehicle}</span>
+        </Row>
+        <Row icon={Navigation}>
+          <span className="font-mono text-sm">{job.type}</span>
+          <span className="ml-1 text-sm text-muted-foreground">· ${job.estPrice} · {job.estDurationMin} min</span>
+        </Row>
+        {driver && (
+          <Row icon={Truck}>
+            <span className="text-sm">Truck <span className="font-mono">{driver.truck}</span> · ETA {driver.etaMin}m</span>
+          </Row>
+        )}
+      </div>
+
+      <DriverMiniMap job={job} />
+
+      <PreJobChecklist
+        jobId={job.id}
+        done={isChecklistDone}
+        onChange={(d) => setChecklistDone((prev) => ({ ...prev, [job.id]: d }))}
+      />
+
+      {/* Big thumb-friendly status flow */}
+      <div className="grid grid-cols-3 gap-2">
+        {FLOW.map((step) => {
+          const isCurrent = job.status === step.key;
+          const isComplete = step.key === "Complete";
+          const blocked = step.key === "EnRoute" && !isChecklistDone && !isCurrent;
+          return (
+            <button
+              key={step.key}
+              disabled={blocked}
+              onClick={() => updateJobStatus(job.id, step.key)}
+              className={cn(
+                "rounded-xl border px-2 py-5 text-sm font-bold leading-tight transition-all active:scale-95",
+                blocked && "cursor-not-allowed opacity-40",
+                isCurrent
+                  ? "border-primary bg-primary text-primary-foreground glow-primary"
+                  : isComplete
+                    ? "border-success/40 bg-success/10 text-success hover:bg-success/20"
+                    : "border-border bg-surface text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {step.label}
+            </button>
+          );
+        })}
+      </div>
+      {!isChecklistDone && (
+        <div className="-mt-3 text-center text-[11px] text-muted-foreground">
+          Complete the pre-trip checklist to go En Route
+        </div>
+      )}
+
+      <RequestBackupButton job={job} />
+
+      {job.status === "OnScene" && <SignaturePad job={job} />}
+
+      <NavigateMenu location={job.location} />
+
+      <a
+        href={`tel:${job.phone.replace(/\D/g, "")}`}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-4 text-base font-bold text-success-foreground active:scale-[0.98]"
+      >
+        <Phone className="h-5 w-5" /> Call customer
+      </a>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Notes
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          placeholder="Customer asked to wait at lobby…"
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+      </div>
+
+      <VehicleConditionPhotos job={job} />
+
+      <DriverEarningsPanel driver={driver} />
+
+      {job.notes && (
+        <div className="rounded-md border border-border bg-surface p-2 text-xs text-muted-foreground">
+          <b className="text-foreground">Dispatch note:</b> {job.notes}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Shared helpers
+   ───────────────────────────────────────────────────────────────── */
+
+// Live GPS — watch position while there's an active, non-complete job
+function useDriverGps(job: Job | null, driverId: string | null) {
+  const shouldWatch = !!job && job.status !== "Complete" && !!driverId;
+  const lastSentRef = useRef<{ lat: number; lng: number; t: number } | null>(null);
+  useEffect(() => {
+    if (!shouldWatch || !driverId) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const now = Date.now();
+        const last = lastSentRef.current;
+        // throttle: skip if <10s since last AND moved <~15m
+        if (last && now - last.t < 10_000) {
+          const dLat = Math.abs(lat - last.lat);
+          const dLng = Math.abs(lng - last.lng);
+          if (dLat < 0.00015 && dLng < 0.00015) return;
+        }
+        lastSentRef.current = { lat, lng, t: now };
+        updateDriverLocation({ data: { driverId, lat, lng } }).catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [shouldWatch, driverId]);
 }
 
 function Row({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
@@ -245,8 +403,6 @@ function Row({ icon: Icon, children }: { icon: React.ComponentType<{ className?:
     </div>
   );
 }
-
-void CheckCircle2;
 
 function NavigateMenu({ location }: { location: string }) {
   const [open, setOpen] = useState(false);
