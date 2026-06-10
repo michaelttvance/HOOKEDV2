@@ -195,7 +195,7 @@ function AuthPage() {
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-3">
+          <div className="mb-6 grid grid-cols-1 gap-3">
             <button
               type="button"
               onClick={() => oauthSignIn("google")}
@@ -205,21 +205,7 @@ function AuthPage() {
               <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.5 14.6 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12S6.8 21.5 12 21.5c6.9 0 9.4-4.9 9.4-7.4 0-.5-.05-.9-.12-1.3H12z"/>
               </svg>
-              Google
-            </button>
-            <button
-              type="button"
-              onClick={() => oauthSignIn("azure")}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm font-semibold text-white transition-all hover:border-white/30 hover:bg-white/10 disabled:opacity-60"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 23 23" aria-hidden="true">
-                <path fill="#F25022" d="M1 1h10v10H1z"/>
-                <path fill="#00A4EF" d="M1 12h10v10H1z"/>
-                <path fill="#7FBA00" d="M12 1h10v10H12z"/>
-                <path fill="#FFB900" d="M12 12h10v10H12z"/>
-              </svg>
-              Microsoft
+              Continue with Google
             </button>
           </div>
 
