@@ -53,7 +53,7 @@ export const Route = createFileRoute("/owner")({
 function OwnerConsole() {
   const metricsFn = useServerFn(getOwnerMetrics);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["owner-metrics"],
+    queryKey: ["owner-metrics", "marketing-v2"],
     queryFn: () => metricsFn(),
     refetchInterval: 60_000,
   });
@@ -114,6 +114,10 @@ function OwnerConsole() {
 
 function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetrics>> }) {
   const totals = data.totals;
+  const breakdowns = data.breakdowns ?? {};
+  const campaigns = data.campaigns ?? [];
+  const companies = data.companies ?? [];
+  const recentApplications = data.recentApplications ?? [];
   const conversion =
     totals.applications > 0 ? Math.round((totals.invitedApplications / totals.applications) * 100) : 0;
 
@@ -148,35 +152,35 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
         </Panel>
 
         <Panel title="Market Signals" action="Application sources">
-          <BarList data={data.breakdowns.heardFrom} />
+          <BarList data={breakdowns.heardFrom ?? {}} />
         </Panel>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
         <Panel title="Fleet Size Demand">
-          <BarList data={data.breakdowns.truckCount} />
+          <BarList data={breakdowns.truckCount ?? {}} />
         </Panel>
         <Panel title="Current Software">
-          <BarList data={data.breakdowns.software} />
+          <BarList data={breakdowns.software ?? {}} />
         </Panel>
         <Panel title="Active Job Mix">
-          <BarList data={data.breakdowns.jobStatus} />
+          <BarList data={breakdowns.jobStatus ?? {}} />
         </Panel>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel title="Campaign Control" action="Create, track, pause">
-          <CampaignManager campaigns={data.campaigns} />
+          <CampaignManager campaigns={campaigns} />
         </Panel>
         <Panel title="Attribution Analytics" action="UTM tracking">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">UTM Sources</div>
-              <BarList data={data.breakdowns.utmSource} />
+              <BarList data={breakdowns.utmSource ?? {}} />
             </div>
             <div>
               <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">UTM Campaigns</div>
-              <BarList data={data.breakdowns.utmCampaign} />
+              <BarList data={breakdowns.utmCampaign ?? {}} />
             </div>
           </div>
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
@@ -200,7 +204,7 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
                 </tr>
               </thead>
               <tbody>
-                {data.companies.map((company) => (
+                {companies.map((company) => (
                   <tr key={company.id} className="border-t border-slate-200">
                     <td className="px-3 py-3">
                       <div className="font-semibold">{company.name}</div>
@@ -224,7 +228,7 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
 
         <Panel title="Recent Applications" action="Newest leads">
           <div className="space-y-2">
-            {data.recentApplications.map((app) => (
+            {recentApplications.map((app) => (
               <div key={app.id} className="rounded-lg border border-slate-200 bg-white p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -285,13 +289,14 @@ function CampaignManager({ campaigns }: { campaigns: Campaign[] }) {
         targetUrl: "https://hookedv-2.vercel.app/apply",
       });
       qc.invalidateQueries({ queryKey: ["owner-metrics"] });
+      qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v2"] });
     },
   });
 
   const statusM = useMutation({
     mutationFn: (vars: { id: string; status: "active" | "paused" | "ended" }) =>
       setStatus({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner-metrics"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v2"] }),
   });
 
   async function copy(url: string, id: string) {
