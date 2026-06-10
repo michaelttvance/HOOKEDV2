@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RejectedRouteImport } from './routes/rejected'
@@ -33,6 +34,11 @@ import { Route as StatementAccountIdMonthRouteImport } from './routes/statement.
 import { Route as ApiPublicInboundEmailRouteImport } from './routes/api/public/inbound-email'
 import { Route as ApiPublicApprovalActionRouteImport } from './routes/api/public/approval-action'
 
+const TrialExpiredRoute = TrialExpiredRouteImport.update({
+  id: '/trial-expired',
+  path: '/trial-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trial-expired': typeof TrialExpiredRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trial-expired'
     | '/billing'
     | '/dashboard'
     | '/driver'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trial-expired'
     | '/billing'
     | '/dashboard'
     | '/driver'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trial-expired'
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
     | '/_authenticated/driver'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   RejectedRoute: typeof RejectedRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TrialExpiredRoute: typeof TrialExpiredRoute
   RequestCompanyIdRoute: typeof RequestCompanyIdRoute
   ApiPublicApprovalActionRoute: typeof ApiPublicApprovalActionRoute
   ApiPublicInboundEmailRoute: typeof ApiPublicInboundEmailRoute
@@ -319,6 +332,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trial-expired': {
+      id: '/trial-expired'
+      path: '/trial-expired'
+      fullPath: '/trial-expired'
+      preLoaderRoute: typeof TrialExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -520,6 +540,7 @@ const rootRouteChildren: RootRouteChildren = {
   RejectedRoute: RejectedRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TrialExpiredRoute: TrialExpiredRoute,
   RequestCompanyIdRoute: RequestCompanyIdRoute,
   ApiPublicApprovalActionRoute: ApiPublicApprovalActionRoute,
   ApiPublicInboundEmailRoute: ApiPublicInboundEmailRoute,
@@ -528,13 +549,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

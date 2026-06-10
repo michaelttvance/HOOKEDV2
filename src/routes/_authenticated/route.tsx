@@ -39,12 +39,26 @@ export const Route = createFileRoute("/_authenticated")({
     // Gate by approval status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("status")
+      .select("status, companies(trial_ends_at)")
       .eq("id", data.user.id)
       .maybeSingle();
     const status = (profile?.status as "pending" | "approved" | "rejected" | undefined) ?? "pending";
     if (status === "pending") throw redirect({ to: "/pending" });
     if (status === "rejected") throw redirect({ to: "/rejected" });
+
+    // Gate by trial expiration (super admin is exempt)
+    const isSuperAdmin = (data.user.email ?? "").toLowerCase() === "mike@hookaidashboard.com";
+    if (!isSuperAdmin) {
+      const companies = profile?.companies as
+        | { trial_ends_at?: string }
+        | { trial_ends_at?: string }[]
+        | null;
+      const companyRow = Array.isArray(companies) ? companies[0] : companies;
+      const trialEndsAt = companyRow?.trial_ends_at ? new Date(companyRow.trial_ends_at) : null;
+      if (trialEndsAt && trialEndsAt.getTime() < Date.now() && location.pathname !== "/trial-expired") {
+        throw redirect({ to: "/trial-expired" });
+      }
+    }
   },
   component: AuthenticatedLayout,
 });
@@ -177,6 +191,7 @@ function AppShell() {
           {!isDriver && <ShareRequestLink companyId={profile.companyId} />}
         </nav>
         <div className="space-y-2 p-3">
+          <TrialBanner trialEndsAt={profile.trialEndsAt} />
           {!isDriver && (
             <div className="hidden rounded-md border border-border bg-background/40 p-3 md:block">
               <div className="flex items-center gap-2 text-xs font-medium">
@@ -259,6 +274,34 @@ function AppShell() {
       )}
 
       {inviteOpen && <InviteDialog onClose={() => setInviteOpen(false)} />}
+    </div>
+  );
+}
+
+function TrialBanner({ trialEndsAt }: { trialEndsAt: string | null }) {
+  if (!trialEndsAt) return null;
+  const msLeft = new Date(trialEndsAt).getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+  if (daysLeft > 30) return null;
+
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/10 p-3">
+      <div className="text-xs font-semibold text-primary">
+        {daysLeft > 0
+          ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in free trial`
+          : "Your free trial has ended"}
+      </div>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+        {daysLeft > 0
+          ? "Enjoying Hooked? Reach out anytime to discuss plans."
+          : "Contact us to keep using Hooked."}
+      </p>
+      <a
+        href="mailto:mike@hookaidashboard.com"
+        className="mt-2 inline-block text-[11px] font-semibold text-primary hover:underline"
+      >
+        mike@hookaidashboard.com
+      </a>
     </div>
   );
 }

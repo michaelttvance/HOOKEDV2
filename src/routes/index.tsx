@@ -163,7 +163,7 @@ function MarketingPage() {
             </Link>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            No credit card required to apply · Onboarding in under a day
+            30-day free trial · No credit card required · Onboarding in under a day
           </p>
         </section>
 
@@ -176,9 +176,9 @@ function MarketingPage() {
         <section className="border-y border-white/5 bg-white/[0.02]">
           <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 text-center sm:grid-cols-4 sm:px-6">
             {[
+              { value: "30 days", label: "Free trial, no card needed" },
               { value: "5 min", label: "Avg. dispatch time" },
               { value: "24/7", label: "AI on duty" },
-              { value: "100%", label: "Cloud-based" },
               { value: "1 platform", label: "Dispatch + billing + impound" },
             ].map((s) => (
               <div key={s.label}>
@@ -314,28 +314,29 @@ function MarketingPage() {
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Simple, transparent pricing
+                Try it free for 30 days
               </h2>
               <p className="mt-4 text-slate-400">
-                We're onboarding a limited number of operators during early access.
-                Pricing is tailored to your fleet size — apply and we'll send you a quote.
+                Apply for access and start your free 30-day trial — full platform, no credit
+                card required. After your trial, pricing is tailored to your fleet size.
               </p>
             </div>
 
             <div className="mx-auto mt-12 max-w-md rounded-2xl border border-[#FACC15]/30 bg-white/5 p-8 text-center">
               <div className="text-sm font-semibold uppercase tracking-wider text-[#FACC15]">
-                Early Access
+                Free Trial
               </div>
-              <div className="mt-4 text-4xl font-extrabold text-white">Custom pricing</div>
-              <p className="mt-2 text-sm text-slate-400">Based on your number of trucks</p>
+              <div className="mt-4 text-4xl font-extrabold text-white">30 days, on us</div>
+              <p className="mt-2 text-sm text-slate-400">Then custom pricing based on your number of trucks</p>
               <ul className="mt-6 space-y-3 text-left text-sm text-slate-300">
                 {[
+                  "Full access to every feature, no limits",
                   "Unlimited dispatchers & drivers",
                   "AI dispatch assistant included",
                   "Driver mobile app",
                   "Billing, impound & rotations",
                   "Motor club tracking",
-                  "Priority onboarding support",
+                  "No credit card required",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FACC15]" />

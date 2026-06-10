@@ -186,7 +186,7 @@ export function applicationInviteEmail(args: {
 }) {
   return shell(`
     <h1 style="margin:0 0 12px;font-size:22px;color:${brand.text};">You're approved for Hooked</h1>
-    <p style="margin:0 0 16px;color:${brand.text};font-size:15px;line-height:1.6;">Hi ${escape(args.name)}, we'd love to onboard <strong>${escape(args.businessName)}</strong>. Click below to create your account and set up your dispatch board.</p>
+    <p style="margin:0 0 16px;color:${brand.text};font-size:15px;line-height:1.6;">Hi ${escape(args.name)}, we'd love to onboard <strong>${escape(args.businessName)}</strong>. Click below to create your account and start your <strong>30-day free trial</strong> — full access to the dispatch board, driver app, billing, and AI assistant, no credit card required.</p>
     <a href="${args.signupUrl}" style="display:inline-block;background:${brand.primary};color:#0b0f1a;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px;">Create my account</a>
     <p style="margin:20px 0 0;color:${brand.muted};font-size:13px;">Questions? Reply to this email and Mike will get back to you.</p>
   `);
