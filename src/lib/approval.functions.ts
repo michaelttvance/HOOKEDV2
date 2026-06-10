@@ -49,7 +49,7 @@ export const notifyAdminOfSignup = createServerFn({ method: "POST" })
 
     await sendEmail({
       to: ["michaelttvance@gmail.com"],
-      from: "Hooked Alerts <onboarding@resend.dev>",
+      from: "Hooked Alerts <alerts@hookaidashboard.com>",
       subject: `New Hooked Signup Request — ${companyName}`,
       html: adminNotificationEmail({
         applicantName: profile.full_name ?? profile.email ?? "Unknown",

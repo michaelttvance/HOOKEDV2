@@ -17,7 +17,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
     return { ok: false, error: "email_not_configured" };
   }
 
-  const from = input.from ?? "Hooked <onboarding@resend.dev>";
+  const from = input.from ?? "Hooked <mike@hookaidashboard.com>";
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
