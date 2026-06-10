@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -16,6 +16,7 @@ import {
   LogOut,
   Download,
   UserPlus,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,23 +53,29 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-surface/60 px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-slate-50 text-slate-950">
+      <header className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
+            </Link>
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-400 text-slate-950">
               <Truck className="h-4 w-4" />
             </div>
             <div>
               <div className="text-sm font-semibold tracking-tight">Hooked Admin</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Approvals
+              <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                Internal approvals
               </div>
             </div>
           </div>
           <button
             onClick={signOut}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950"
           >
             <LogOut className="h-3 w-3" /> Sign out
           </button>
@@ -76,7 +83,12 @@ function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="mb-4 flex items-center gap-2 border-b border-border">
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          This page is for Hooked staff only. Client admins approve nobody here; they invite their
+          own drivers and dispatchers directly from the dashboard.
+        </div>
+
+        <div className="mb-4 flex items-center gap-2 border-b border-slate-200">
           {([
             { id: "signups", label: "Pending Signups" },
             { id: "applications", label: "Applications" },
@@ -87,8 +99,8 @@ function AdminPage() {
               className={cn(
                 "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
                 tab === t.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
+                  ? "border-amber-500 text-slate-950"
+                  : "border-transparent text-slate-500 hover:text-slate-950",
               )}
             >
               {t.label}
@@ -133,8 +145,8 @@ function SignupsTab() {
             className={cn(
               "rounded-md border px-3 py-1.5 text-xs font-medium capitalize",
               filter === f
-                ? "border-primary bg-primary/15 text-primary"
-                : "border-border text-muted-foreground hover:text-foreground",
+                ? "border-amber-400 bg-amber-100 text-amber-950"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950",
             )}
           >
             {f}
@@ -143,18 +155,18 @@ function SignupsTab() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
       {error && (
-        <div className="rounded-md border border-urgent/40 bg-urgent/10 p-3 text-sm text-urgent">
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {(error as Error).message}
         </div>
       )}
 
       {!isLoading && profiles.length === 0 && (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
           No {filter === "pending" ? "pending" : ""} signups.
         </div>
       )}
@@ -163,17 +175,17 @@ function SignupsTab() {
         {profiles.map((p) => (
           <div
             key={p.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{p.fullName ?? "—"}</span>
                 <StatusBadge status={p.status} />
               </div>
-              <div className="mt-1 text-sm text-muted-foreground">
+              <div className="mt-1 text-sm text-slate-600">
                 {p.companyName ?? "—"} · {p.email ?? "—"} · {p.phone ?? "no phone"}
               </div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">
+              <div className="mt-0.5 text-[11px] text-slate-500">
                 Signed up {new Date(p.createdAt).toLocaleString()}
               </div>
             </div>
@@ -182,14 +194,14 @@ function SignupsTab() {
                 <button
                   disabled={m.isPending}
                   onClick={() => m.mutate({ profileId: p.id, action: "approve" })}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-success px-3 py-2 text-xs font-semibold text-success-foreground hover:bg-success/90 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   <Check className="h-3.5 w-3.5" /> Approve
                 </button>
                 <button
                   disabled={m.isPending}
                   onClick={() => m.mutate({ profileId: p.id, action: "reject" })}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-urgent px-3 py-2 text-xs font-semibold text-urgent-foreground hover:bg-urgent/90 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                 >
                   <X className="h-3.5 w-3.5" /> Reject
                 </button>
@@ -304,13 +316,13 @@ function ApplicationsTab() {
     <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500">
             Trucks
           </span>
           <select
             value={truckFilter}
             onChange={(e) => setTruckFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800"
           >
             {trucks.map((t) => (
               <option key={t} value={t}>
@@ -320,13 +332,13 @@ function ApplicationsTab() {
           </select>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500">
             Software
           </span>
           <select
             value={softwareFilter}
             onChange={(e) => setSoftwareFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800"
           >
             {softwares.map((s) => (
               <option key={s} value={s}>
@@ -336,13 +348,13 @@ function ApplicationsTab() {
           </select>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-slate-500">
             {filtered.length} of {apps.length}
           </span>
           <button
             onClick={exportCsv}
             disabled={filtered.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-primary hover:text-primary disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-amber-400 hover:text-slate-950 disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
@@ -350,26 +362,26 @@ function ApplicationsTab() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
       {error && (
-        <div className="rounded-md border border-urgent/40 bg-urgent/10 p-3 text-sm text-urgent">
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {(error as Error).message}
         </div>
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
           No applications.
         </div>
       )}
 
       {filtered.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-slate-100 text-left text-[11px] uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Name</th>
@@ -383,17 +395,17 @@ function ApplicationsTab() {
             </thead>
             <tbody>
               {filtered.map((a) => (
-                <tr key={a.id} className="border-t border-border align-top">
-                  <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
+                <tr key={a.id} className="border-t border-slate-200 align-top">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
                     {new Date(a.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{a.full_name}</div>
-                    <div className="text-xs text-muted-foreground">{a.email}</div>
-                    <div className="text-xs text-muted-foreground">{a.phone}</div>
+                    <div className="text-xs text-slate-500">{a.email}</div>
+                    <div className="text-xs text-slate-500">{a.phone}</div>
                   </td>
                   <td className="px-4 py-3 font-medium">{a.business_name}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 text-xs text-slate-500">
                     {a.city_state}
                   </td>
                   <td className="px-4 py-3">{a.truck_count}</td>
@@ -403,8 +415,8 @@ function ApplicationsTab() {
                       className={cn(
                         "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
                         a.status === "invited"
-                          ? "bg-success/15 text-success"
-                          : "bg-primary/15 text-primary",
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-800",
                       )}
                     >
                       {a.status}
@@ -412,7 +424,7 @@ function ApplicationsTab() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {a.status === "invited" ? (
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-[11px] text-slate-500">
                         Invited{" "}
                         {a.invited_at
                           ? new Date(a.invited_at).toLocaleDateString()
@@ -422,7 +434,7 @@ function ApplicationsTab() {
                       <button
                         disabled={m.isPending}
                         onClick={() => m.mutate(a.id)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                       >
                         <UserPlus className="h-3.5 w-3.5" /> Approve & Invite
                       </button>
@@ -435,12 +447,12 @@ function ApplicationsTab() {
         </div>
       )}
       {m.isSuccess && (
-        <div className="mt-3 rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success">
+        <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
           ✓ Approved — invite created and the applicant's account-setup link is on its way.
         </div>
       )}
       {m.error && (
-        <div className="mt-3 rounded-md border border-urgent/40 bg-urgent/10 p-3 text-sm text-urgent">
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {(m.error as Error).message}
         </div>
       )}
@@ -451,10 +463,10 @@ function ApplicationsTab() {
 function StatusBadge({ status }: { status: "pending" | "approved" | "rejected" }) {
   const cls =
     status === "approved"
-      ? "bg-success/15 text-success"
+      ? "bg-emerald-100 text-emerald-700"
       : status === "rejected"
-        ? "bg-urgent/15 text-urgent"
-        : "bg-primary/15 text-primary";
+        ? "bg-red-100 text-red-700"
+        : "bg-amber-100 text-amber-800";
   return (
     <span
       className={cn(
