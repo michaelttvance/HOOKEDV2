@@ -322,17 +322,6 @@ function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-10 border-t border-white/5 pt-8 text-center">
-            <p className="text-xs text-slate-500">
-              Want access? Apply at{" "}
-              <a
-                href="https://hookedapp.com/apply"
-                className="font-semibold text-[#FACC15] hover:underline"
-              >
-                hookedapp.com/apply
-              </a>
-            </p>
-          </div>
         </div>
       </div>
     </div>

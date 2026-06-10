@@ -14,6 +14,9 @@ import {
   Menu,
   X,
   Star,
+  Clock,
+  Bell,
+  Navigation,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -162,6 +165,11 @@ function MarketingPage() {
           <p className="mt-4 text-xs text-slate-500">
             No credit card required to apply · Onboarding in under a day
           </p>
+        </section>
+
+        {/* Product preview */}
+        <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+          <DashboardPreview />
         </section>
 
         {/* Stat strip */}
@@ -419,6 +427,145 @@ function MarketingPage() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function DashboardPreview() {
+  const drivers = [
+    { name: "Mike D.", truck: "T-07", status: "Available", color: "text-emerald-400 bg-emerald-400/10" },
+    { name: "Sara P.", truck: "T-12", status: "En route", color: "text-[#FACC15] bg-[#FACC15]/10" },
+    { name: "Luis R.", truck: "T-03", status: "On scene", color: "text-sky-400 bg-sky-400/10" },
+    { name: "Jess K.", truck: "T-18", status: "Available", color: "text-emerald-400 bg-emerald-400/10" },
+  ];
+
+  const jobs = [
+    { customer: "Amanda Reyes", type: "Tow", location: "I-280 N, mile 42", priority: "Urgent", eta: null },
+    { customer: "Devon Park", type: "Lockout", location: "742 Market St", priority: "Standard", eta: null },
+    { customer: "Marcus Lee", type: "Tire change", location: "Hwy 101 S, exit 432", priority: "Standard", eta: "9 min" },
+    { customer: "Nina Alvarez", type: "Tow", location: "Mission Bay Garage L2", priority: "Standard", eta: "4 min" },
+  ];
+
+  const priorityColor: Record<string, string> = {
+    Urgent: "text-red-400 bg-red-400/10 border-red-400/20",
+    Standard: "text-slate-300 bg-white/5 border-white/10",
+  };
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0F1A2E] shadow-[0_20px_80px_-20px_rgba(0,0,0,0.6)]">
+      {/* Browser chrome */}
+      <div className="flex items-center gap-2 border-b border-white/5 bg-white/[0.02] px-4 py-3">
+        <div className="flex gap-1.5">
+          <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#FACC15]/60" />
+          <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
+        </div>
+        <div className="ml-2 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-slate-500 sm:text-left">
+          hookaidashboard.com/dashboard
+        </div>
+        <span className="hidden items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400 sm:flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          Live
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="grid grid-cols-1 lg:grid-cols-12">
+        {/* Driver list */}
+        <div className="border-b border-white/5 p-4 lg:col-span-3 lg:border-b-0 lg:border-r">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Drivers</span>
+            <Bell className="h-3.5 w-3.5 text-slate-600" />
+          </div>
+          <div className="space-y-2">
+            {drivers.map((d) => (
+              <div key={d.name} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
+                <div>
+                  <div className="text-xs font-semibold text-white">{d.name}</div>
+                  <div className="text-[10px] text-slate-500">Truck {d.truck}</div>
+                </div>
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", d.color)}>{d.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="relative min-h-[220px] border-b border-white/5 lg:col-span-5 lg:min-h-[360px] lg:border-b-0 lg:border-r">
+          <div
+            className="absolute inset-0 bg-[#0B1220]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+          {/* Pins */}
+          <div className="absolute left-[20%] top-[30%] flex flex-col items-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500 shadow-lg shadow-red-500/30">
+              <Truck className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="mt-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">T-07</span>
+          </div>
+          <div className="absolute left-[55%] top-[55%] flex flex-col items-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FACC15] shadow-lg shadow-[#FACC15]/30">
+              <Truck className="h-3.5 w-3.5 text-black" />
+            </div>
+            <span className="mt-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">T-12</span>
+          </div>
+          <div className="absolute left-[35%] top-[68%] flex flex-col items-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 shadow-lg shadow-sky-500/30">
+              <Truck className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="mt-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">T-03</span>
+          </div>
+          <div className="absolute left-[75%] top-[22%] flex flex-col items-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30">
+              <Truck className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="mt-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">T-18</span>
+          </div>
+          {/* AI suggestion bubble */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-xl border border-[#FACC15]/30 bg-[#0B1220]/90 px-3 py-2 backdrop-blur sm:right-auto sm:max-w-xs">
+            <Sparkles className="h-4 w-4 shrink-0 text-[#FACC15]" />
+            <p className="text-[11px] text-slate-300">
+              <span className="font-semibold text-white">AI:</span> Sara P. (T-12) is closest to Amanda Reyes — suggest assigning?
+            </p>
+          </div>
+        </div>
+
+        {/* Job queue */}
+        <div className="p-4 lg:col-span-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Job queue</span>
+            <span className="rounded-full bg-[#FACC15]/10 px-2 py-0.5 text-[10px] font-semibold text-[#FACC15]">{jobs.length} open</span>
+          </div>
+          <div className="space-y-2">
+            {jobs.map((j) => (
+              <div key={j.customer} className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white">{j.customer}</span>
+                  <span className={cn("rounded border px-1.5 py-0.5 text-[9px] font-medium", priorityColor[j.priority])}>
+                    {j.priority}
+                  </span>
+                </div>
+                <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <Navigation className="h-3 w-3" />
+                  <span className="truncate">{j.location}</span>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">{j.type}</span>
+                  {j.eta && (
+                    <span className="flex items-center gap-1 text-[10px] text-[#FACC15]">
+                      <Clock className="h-3 w-3" /> ETA {j.eta}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
