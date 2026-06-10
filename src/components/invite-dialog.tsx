@@ -7,7 +7,7 @@ import { cn } from "../lib/utils";
 interface Invite {
   id: string;
   email: string;
-  role: "dispatcher" | "driver";
+  role: "admin" | "dispatcher" | "driver";
   token: string;
   accepted_at: string | null;
   created_at: string;
@@ -16,7 +16,7 @@ interface Invite {
 export function InviteDialog({ onClose }: { onClose: () => void }) {
   const { profile } = useAuth();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"dispatcher" | "driver">("driver");
+  const [role, setRole] = useState<"admin" | "dispatcher" | "driver">("driver");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -98,7 +98,7 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
           <label className="block">
             <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Role</span>
             <div className="flex gap-2">
-              {(["driver", "dispatcher"] as const).map((r) => (
+              {(["admin", "dispatcher", "driver"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"

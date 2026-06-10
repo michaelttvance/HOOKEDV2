@@ -1034,7 +1034,7 @@ export type Database = {
       seed_company: { Args: { _company_id: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "dispatcher" | "driver"
+      app_role: "admin" | "dispatcher" | "driver"
       approval_status: "pending" | "approved" | "rejected"
       billing_status: "paid" | "invoiced" | "pending"
       driver_status: "available" | "en_route" | "on_scene" | "off"
@@ -1173,7 +1173,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["dispatcher", "driver"],
+      app_role: ["admin", "dispatcher", "driver"],
       approval_status: ["pending", "approved", "rejected"],
       billing_status: ["paid", "invoiced", "pending"],
       driver_status: ["available", "en_route", "on_scene", "off"],

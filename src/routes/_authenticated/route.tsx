@@ -77,7 +77,7 @@ function AuthenticatedLayout() {
   );
 }
 
-const NAV_DISPATCHER = [
+const NAV_ADMIN = [
   { to: "/dashboard", label: "Dispatch", icon: LayoutDashboard },
   { to: "/impound", label: "Impound Lot", icon: Warehouse },
   { to: "/billing", label: "Billing", icon: Receipt },
@@ -85,6 +85,13 @@ const NAV_DISPATCHER = [
   { to: "/rotations", label: "Rotations", icon: ShieldCheck },
   { to: "/motor-clubs", label: "Motor Clubs", icon: Building2 },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
+] as const;
+
+const NAV_DISPATCHER = [
+  { to: "/dashboard", label: "Dispatch", icon: LayoutDashboard },
+  { to: "/impound", label: "Impound Lot", icon: Warehouse },
+  { to: "/rotations", label: "Rotations", icon: ShieldCheck },
+  { to: "/motor-clubs", label: "Motor Clubs", icon: Building2 },
 ] as const;
 
 const NAV_DRIVER = [{ to: "/driver", label: "My Job", icon: Smartphone }] as const;
@@ -104,7 +111,9 @@ function AppShell() {
   useEffect(() => { setNavOpen(false); }, [pathname]);
 
   const isDriver = profile.role === "driver";
-  const nav = isDriver ? NAV_DRIVER : NAV_DISPATCHER;
+  const isClientAdmin = profile.role === "admin";
+  const isHookedAdmin = ADMIN_EMAILS.includes((user?.email ?? "").toLowerCase());
+  const nav = isDriver ? NAV_DRIVER : isClientAdmin ? NAV_ADMIN : NAV_DISPATCHER;
 
   const stalled = jobs.filter(
     (j) => j.status === "Unassigned" && Date.now() - j.receivedAt > 5 * 60_000,
@@ -114,6 +123,14 @@ function AppShell() {
   useEffect(() => {
     if (isDriver && pathname !== "/driver") navigate({ to: "/driver", replace: true });
   }, [isDriver, pathname, navigate]);
+
+  useEffect(() => {
+    if (!profile.role || isDriver || isClientAdmin) return;
+    const adminOnlyPaths = ["/billing", "/insights", "/settings"];
+    if (adminOnlyPaths.some((path) => pathname.startsWith(path))) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [isClientAdmin, isDriver, navigate, pathname, profile.role]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -153,7 +170,7 @@ function AppShell() {
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold tracking-tight">{profile.companyName ?? "Hooked"}</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              {isDriver ? "Driver" : "Dispatch"}
+              {isDriver ? "Driver" : isClientAdmin ? "Admin" : "Dispatch"}
             </div>
           </div>
           <button
@@ -184,7 +201,7 @@ function AppShell() {
               </Link>
             );
           })}
-          {!isDriver && (
+          {isClientAdmin && (
             <button
               onClick={() => setInviteOpen(true)}
               className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -194,7 +211,7 @@ function AppShell() {
             </button>
           )}
           {!isDriver && <ShareRequestLink companyId={profile.companyId} />}
-          {!isDriver && ADMIN_EMAILS.includes((user?.email ?? "").toLowerCase()) && (
+          {!isDriver && isHookedAdmin && (
             <Link
               to="/admin"
               className={cn(

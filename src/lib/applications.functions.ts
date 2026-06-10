@@ -136,7 +136,7 @@ export const approveAndInviteApplication = createServerFn({ method: "POST" })
       .insert({
         company_id: company.id,
         email: app.email,
-        role: "dispatcher",
+        role: "admin",
         invited_by: context.userId,
       })
       .select("token")

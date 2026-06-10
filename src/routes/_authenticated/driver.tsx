@@ -9,6 +9,7 @@ import {
   Bell,
   BellOff,
   Phone,
+  MessageSquare,
   Navigation,
   MapPin,
   Car,
@@ -22,6 +23,7 @@ import { useDispatch } from "../../lib/dispatch-store";
 import { useAuth } from "../../lib/use-auth";
 import type { Driver, Job, JobStatus } from "../../lib/seed-data";
 import { DriverMiniMap } from "../../components/driver-mini-map";
+import { trackingUrl } from "../../lib/media";
 import {
   PreJobChecklist,
   VehicleConditionPhotos,
@@ -206,6 +208,13 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
   const [notes, setNotes] = useState("");
   const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
   const isChecklistDone = !!checklistDone[job.id];
+  const cleanPhone = job.phone.replace(/\D/g, "");
+  const trackingSmsBody = job.publicToken
+    ? `Hi ${job.caller}, this is your Hooked driver. You can track my ETA here: ${trackingUrl(job.id, job.publicToken)}`
+    : "";
+  const trackingSmsHref = cleanPhone
+    ? `sms:${cleanPhone}?&body=${encodeURIComponent(trackingSmsBody)}`
+    : undefined;
 
   return (
     <div className="space-y-5">
@@ -288,11 +297,20 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
       <NavigateMenu location={job.location} />
 
       <a
-        href={`tel:${job.phone.replace(/\D/g, "")}`}
+        href={`tel:${cleanPhone}`}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-4 text-base font-bold text-success-foreground active:scale-[0.98]"
       >
         <Phone className="h-5 w-5" /> Call customer
       </a>
+
+      {job.publicToken && trackingSmsHref && (
+        <a
+          href={trackingSmsHref}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/50 bg-primary/10 py-4 text-base font-bold text-primary active:scale-[0.98]"
+        >
+          <MessageSquare className="h-5 w-5" /> Text tracking link
+        </a>
+      )}
 
       <div>
         <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
