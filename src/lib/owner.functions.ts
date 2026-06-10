@@ -82,7 +82,7 @@ async function tableCount(table: string, filters?: (query: any) => any) {
   return count ?? 0;
 }
 
-export const getOwnerMetrics = createServerFn({ method: "GET" })
+export const getOwnerMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     if (!(await isOwner(context.userId))) throw new Error("Forbidden");

@@ -53,7 +53,7 @@ export const Route = createFileRoute("/owner")({
 function OwnerConsole() {
   const metricsFn = useServerFn(getOwnerMetrics);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["owner-metrics", "marketing-v2"],
+    queryKey: ["owner-metrics", "marketing-v3"],
     queryFn: () => metricsFn(),
     refetchInterval: 60_000,
   });
@@ -293,14 +293,14 @@ function CampaignManager({ campaigns }: { campaigns: Campaign[] }) {
         targetUrl: "https://hookedv-2.vercel.app/apply",
       });
       qc.invalidateQueries({ queryKey: ["owner-metrics"] });
-      qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v2"] });
+      qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v3"] });
     },
   });
 
   const statusM = useMutation({
     mutationFn: (vars: { id: string; status: "active" | "paused" | "ended" }) =>
       setStatus({ data: vars }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v2"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner-metrics", "marketing-v3"] }),
   });
 
   async function copy(url: string, id: string) {
