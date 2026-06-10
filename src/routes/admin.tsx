@@ -434,6 +434,11 @@ function ApplicationsTab() {
           </table>
         </div>
       )}
+      {m.isSuccess && (
+        <div className="mt-3 rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success">
+          ✓ Approved — invite created and the applicant's account-setup link is on its way.
+        </div>
+      )}
       {m.error && (
         <div className="mt-3 rounded-md border border-urgent/40 bg-urgent/10 p-3 text-sm text-urgent">
           {(m.error as Error).message}

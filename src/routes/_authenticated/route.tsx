@@ -88,6 +88,8 @@ const NAV_DISPATCHER = [
 
 const NAV_DRIVER = [{ to: "/driver", label: "My Job", icon: Smartphone }] as const;
 
+const ADMIN_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+
 function AppShell() {
   const [aiOpen, setAiOpen] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -191,6 +193,20 @@ function AppShell() {
             </button>
           )}
           {!isDriver && <ShareRequestLink companyId={profile.companyId} />}
+          {!isDriver && ADMIN_EMAILS.includes((user?.email ?? "").toLowerCase()) && (
+            <Link
+              to="/admin"
+              className={cn(
+                "mb-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                pathname.startsWith("/admin")
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="space-y-2 p-3">
           <TrialBanner trialEndsAt={profile.trialEndsAt} />

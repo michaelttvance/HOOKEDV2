@@ -118,6 +118,11 @@ export const approveAndInviteApplication = createServerFn({ method: "POST" })
       .single();
     if (appErr || !app) throw appErr ?? new Error("Application not found");
 
+    // Idempotency: if already invited, don't create duplicate companies/invites
+    if (app.status === "invited") {
+      return { ok: true, alreadyInvited: true as const };
+    }
+
     // Create a fresh company + invite for them
     const { data: company, error: cErr } = await supabaseAdmin
       .from("companies")
