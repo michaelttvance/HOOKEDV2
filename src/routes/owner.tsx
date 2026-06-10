@@ -118,6 +118,10 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
   const campaigns = data.campaigns ?? [];
   const companies = data.companies ?? [];
   const recentApplications = data.recentApplications ?? [];
+  const activeCampaigns = safeNumber(totals.activeCampaigns);
+  const totalCampaignBudget = safeNumber(totals.totalCampaignBudget);
+  const attributedApplications = safeNumber(totals.attributedApplications);
+  const campaignLeads = safeNumber(totals.campaignLeads);
   const conversion =
     totals.applications > 0 ? Math.round((totals.invitedApplications / totals.applications) * 100) : 0;
 
@@ -131,8 +135,8 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
       </section>
 
       <section className="grid gap-3 md:grid-cols-3">
-        <MetricCard icon={Megaphone} label="Active campaigns" value={fmt(totals.activeCampaigns)} sub={`${money(totals.totalCampaignBudget)} active budget`} tone="amber" />
-        <MetricCard icon={Link2} label="Attributed leads" value={fmt(totals.attributedApplications)} sub={`${fmt(totals.campaignLeads)} matched to campaigns`} />
+        <MetricCard icon={Megaphone} label="Active campaigns" value={fmt(activeCampaigns)} sub={`${money(totalCampaignBudget)} active budget`} tone="amber" />
+        <MetricCard icon={Link2} label="Attributed leads" value={fmt(attributedApplications)} sub={`${fmt(campaignLeads)} matched to campaigns`} />
         <MetricCard icon={BarChart3} label="Marketing conversion" value={`${conversion}%`} sub="Applications invited to setup" tone="green" />
       </section>
 
@@ -539,13 +543,18 @@ function StatusDot({ status }: { status: string }) {
 }
 
 function fmt(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
+  return new Intl.NumberFormat("en-US").format(safeNumber(value));
 }
 
 function money(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(safeNumber(value));
 }
 
 function date(value: string) {
   return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function safeNumber(value: unknown) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
 }
