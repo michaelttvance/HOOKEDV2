@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { updateDriverLocation } from "../../lib/driver.functions";
+import { deletePushSubscription, savePushSubscription } from "../../lib/push.functions";
 import {
+  Bell,
+  BellOff,
   Phone,
   Navigation,
   MapPin,
@@ -12,6 +16,7 @@ import {
   Truck,
   Power,
   Coffee,
+  Smartphone,
 } from "lucide-react";
 import { useDispatch } from "../../lib/dispatch-store";
 import { useAuth } from "../../lib/use-auth";
@@ -129,6 +134,8 @@ function RealDriverApp({ userId }: { userId: string | null }) {
             {onShift ? "On shift" : "Off shift"}
           </button>
         </div>
+
+        <PushAlertsCard />
 
         {/* My job queue (if more than one) */}
         {myJobs.length > 1 && (
@@ -366,6 +373,152 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
    Shared helpers
    ───────────────────────────────────────────────────────────────── */
 
+function PushAlertsCard() {
+  const saveSub = useServerFn(savePushSubscription);
+  const deleteSub = useServerFn(deletePushSubscription);
+  const [supported, setSupported] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+
+  useEffect(() => {
+    const ok =
+      typeof window !== "undefined" &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window &&
+      window.isSecureContext;
+    setSupported(ok);
+    if (!ok) return;
+    setPermission(Notification.permission);
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((sub) => setSubscribed(!!sub))
+      .catch(() => setSubscribed(false));
+  }, []);
+
+  async function enableAlerts() {
+    if (!supported || !publicKey || busy) return;
+    setBusy(true);
+    try {
+      let nextPermission = Notification.permission;
+      if (nextPermission !== "granted") {
+        nextPermission = await Notification.requestPermission();
+        setPermission(nextPermission);
+      }
+      if (nextPermission !== "granted") return;
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        }));
+      const keys = subscription.toJSON().keys;
+      if (!keys?.p256dh || !keys.auth) throw new Error("Missing browser push keys.");
+
+      await saveSub({
+        data: {
+          endpoint: subscription.endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          userAgent: navigator.userAgent,
+        },
+      });
+      setSubscribed(true);
+    } catch (err) {
+      console.error("push subscription failed", err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableAlerts() {
+    if (!supported || busy) return;
+    setBusy(true);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await deleteSub({ data: { endpoint: subscription.endpoint } });
+        await subscription.unsubscribe();
+      }
+      setSubscribed(false);
+    } catch (err) {
+      console.error("push unsubscribe failed", err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!supported) {
+    return (
+      <div className="mb-4 rounded-2xl border border-border bg-surface p-4">
+        <div className="flex items-start gap-3">
+          <Smartphone className="mt-0.5 h-5 w-5 text-muted-foreground" />
+          <div>
+            <div className="text-sm font-bold">Install driver app</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Add Hooked to your home screen from Safari or Chrome to enable mobile job alerts.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border border-border bg-surface p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-xl",
+            subscribed ? "bg-success/15 text-success" : "bg-primary/15 text-primary",
+          )}>
+            {subscribed ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+          </div>
+          <div>
+            <div className="text-sm font-bold">Job alerts</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {subscribed
+                ? "Enabled. New assigned jobs will alert this device."
+                : permission === "denied"
+                  ? "Blocked in browser settings. Allow notifications for this site to receive job alerts."
+                  : "Enable alerts so dispatch can reach you even when the app is in the background."}
+            </p>
+          </div>
+        </div>
+        {subscribed ? (
+          <button
+            type="button"
+            onClick={disableAlerts}
+            disabled={busy}
+            className="shrink-0 rounded-full border border-border px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            Turn off
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={enableAlerts}
+            disabled={busy || permission === "denied" || !publicKey}
+            className="shrink-0 rounded-full bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-transform active:scale-95 disabled:opacity-60"
+          >
+            Enable
+          </button>
+        )}
+      </div>
+      {!publicKey && (
+        <div className="mt-2 text-[11px] text-warning">Push alerts need VAPID keys configured.</div>
+      )}
+    </div>
+  );
+}
+
 // Live GPS — watch position while there's an active, non-complete job
 function useDriverGps(job: Job | null, driverId: string | null) {
   const shouldWatch = !!job && job.status !== "Complete" && !!driverId;
@@ -393,6 +546,17 @@ function useDriverGps(job: Job | null, driverId: string | null) {
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [shouldWatch, driverId]);
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 function Row({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {

@@ -8,12 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 import { sendDispatchChat, type DispatchSnapshot } from "./ai.functions";
 import { sendSms } from "./sms.functions";
 import { updateJobEta } from "./driver.functions";
+import { notifyDriverNewJob } from "./push.functions";
 import { trackingUrl } from "./media";
 import {
   JOB_PRESETS,
@@ -147,6 +149,7 @@ const Ctx = createContext<DispatchState | null>(null);
 
 export function DispatchProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
+  const notifyNewJob = useServerFn(notifyDriverNewJob);
   const { user, profile } = useAuth();
   const companyId = profile.companyId;
   const enabled = !!user && !!companyId;
@@ -398,10 +401,11 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
         }
         await enqueueSms(jobId, "assigned", body, job.phone);
       }
+      notifyNewJob({ data: { jobId } }).catch((err) => console.error("push notify failed", err));
       qc.invalidateQueries({ queryKey: ["jobs", companyId] });
       qc.invalidateQueries({ queryKey: ["drivers", companyId] });
     },
-    [drivers, jobs, qc, companyId, smsTemplates, companyName, renderTemplate, enqueueSms],
+    [drivers, jobs, qc, companyId, smsTemplates, companyName, renderTemplate, enqueueSms, notifyNewJob],
   );
 
   const createJob = useCallback(
