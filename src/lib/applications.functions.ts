@@ -62,8 +62,8 @@ export const submitApplication = createServerFn({ method: "POST" })
     await Promise.allSettled([
       sendEmail({
         to: data.email,
-        from: "Mike at Hooked <mike@hookaidashboard.com>",
-        reply_to: "mike@hookaidashboard.com",
+        from: "Mike at Hooked <onboarding@resend.dev>",
+        reply_to: "michaelttvance@gmail.com",
         subject: "We received your Hooked application",
         html: applicationConfirmationEmail({
           name: data.fullName,
@@ -71,7 +71,8 @@ export const submitApplication = createServerFn({ method: "POST" })
         }),
       }),
       sendEmail({
-        to: ["mike@hookaidashboard.com", "support@hookaidashboard.com"],
+        to: ["michaelttvance@gmail.com"],
+        from: "Hooked Alerts <onboarding@resend.dev>",
         subject: `New Hooked Application — ${data.businessName} — ${data.cityState}`,
         html: applicationNotificationEmail(data),
         reply_to: data.email,
@@ -142,8 +143,8 @@ export const approveAndInviteApplication = createServerFn({ method: "POST" })
 
     await sendEmail({
       to: app.email,
-      from: "Mike at Hooked <mike@hookaidashboard.com>",
-      reply_to: "mike@hookaidashboard.com",
+      from: "Mike at Hooked <onboarding@resend.dev>",
+      reply_to: "michaelttvance@gmail.com",
       subject: "You're approved — set up your Hooked account",
       html: applicationInviteEmail({
         name: app.full_name,
