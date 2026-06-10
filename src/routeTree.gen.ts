@@ -21,10 +21,12 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TrackJobIdRouteImport } from './routes/track.$jobId'
 import { Route as RequestCompanyIdRouteImport } from './routes/request.$companyId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRotationsRouteImport } from './routes/_authenticated/rotations'
 import { Route as AuthenticatedMotorClubsRouteImport } from './routes/_authenticated/motor-clubs'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedInboundEmailsRouteImport } from './routes/_authenticated/inbound-emails'
 import { Route as AuthenticatedImpoundRouteImport } from './routes/_authenticated/impound'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
@@ -93,6 +95,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackJobIdRoute = TrackJobIdRouteImport.update({
+  id: '/track/$jobId',
+  path: '/track/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RequestCompanyIdRoute = RequestCompanyIdRouteImport.update({
   id: '/request/$companyId',
   path: '/request/$companyId',
@@ -111,6 +118,11 @@ const AuthenticatedRotationsRoute = AuthenticatedRotationsRouteImport.update({
 const AuthenticatedMotorClubsRoute = AuthenticatedMotorClubsRouteImport.update({
   id: '/motor-clubs',
   path: '/motor-clubs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInboundEmailsRoute =
@@ -172,10 +184,12 @@ export interface FileRoutesByFullPath {
   '/driver': typeof AuthenticatedDriverRoute
   '/impound': typeof AuthenticatedImpoundRoute
   '/inbound-emails': typeof AuthenticatedInboundEmailsRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/motor-clubs': typeof AuthenticatedMotorClubsRoute
   '/rotations': typeof AuthenticatedRotationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
+  '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
@@ -197,10 +211,12 @@ export interface FileRoutesByTo {
   '/driver': typeof AuthenticatedDriverRoute
   '/impound': typeof AuthenticatedImpoundRoute
   '/inbound-emails': typeof AuthenticatedInboundEmailsRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/motor-clubs': typeof AuthenticatedMotorClubsRoute
   '/rotations': typeof AuthenticatedRotationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
+  '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
@@ -224,10 +240,12 @@ export interface FileRoutesById {
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
   '/_authenticated/impound': typeof AuthenticatedImpoundRoute
   '/_authenticated/inbound-emails': typeof AuthenticatedInboundEmailsRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/motor-clubs': typeof AuthenticatedMotorClubsRoute
   '/_authenticated/rotations': typeof AuthenticatedRotationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
+  '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
@@ -251,10 +269,12 @@ export interface FileRouteTypes {
     | '/driver'
     | '/impound'
     | '/inbound-emails'
+    | '/insights'
     | '/motor-clubs'
     | '/rotations'
     | '/settings'
     | '/request/$companyId'
+    | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/statement/$accountId/$month'
@@ -276,10 +296,12 @@ export interface FileRouteTypes {
     | '/driver'
     | '/impound'
     | '/inbound-emails'
+    | '/insights'
     | '/motor-clubs'
     | '/rotations'
     | '/settings'
     | '/request/$companyId'
+    | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/statement/$accountId/$month'
@@ -302,10 +324,12 @@ export interface FileRouteTypes {
     | '/_authenticated/driver'
     | '/_authenticated/impound'
     | '/_authenticated/inbound-emails'
+    | '/_authenticated/insights'
     | '/_authenticated/motor-clubs'
     | '/_authenticated/rotations'
     | '/_authenticated/settings'
     | '/request/$companyId'
+    | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/statement/$accountId/$month'
@@ -325,6 +349,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrialExpiredRoute: typeof TrialExpiredRoute
   RequestCompanyIdRoute: typeof RequestCompanyIdRoute
+  TrackJobIdRoute: typeof TrackJobIdRoute
   ApiPublicApprovalActionRoute: typeof ApiPublicApprovalActionRoute
   ApiPublicInboundEmailRoute: typeof ApiPublicInboundEmailRoute
   StatementAccountIdMonthRoute: typeof StatementAccountIdMonthRoute
@@ -416,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/track/$jobId': {
+      id: '/track/$jobId'
+      path: '/track/$jobId'
+      fullPath: '/track/$jobId'
+      preLoaderRoute: typeof TrackJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/request/$companyId': {
       id: '/request/$companyId'
       path: '/request/$companyId'
@@ -442,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/motor-clubs'
       fullPath: '/motor-clubs'
       preLoaderRoute: typeof AuthenticatedMotorClubsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inbound-emails': {
@@ -509,6 +548,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDriverRoute: typeof AuthenticatedDriverRoute
   AuthenticatedImpoundRoute: typeof AuthenticatedImpoundRoute
   AuthenticatedInboundEmailsRoute: typeof AuthenticatedInboundEmailsRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedMotorClubsRoute: typeof AuthenticatedMotorClubsRoute
   AuthenticatedRotationsRoute: typeof AuthenticatedRotationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -520,6 +560,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDriverRoute: AuthenticatedDriverRoute,
   AuthenticatedImpoundRoute: AuthenticatedImpoundRoute,
   AuthenticatedInboundEmailsRoute: AuthenticatedInboundEmailsRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedMotorClubsRoute: AuthenticatedMotorClubsRoute,
   AuthenticatedRotationsRoute: AuthenticatedRotationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -542,6 +583,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrialExpiredRoute: TrialExpiredRoute,
   RequestCompanyIdRoute: RequestCompanyIdRoute,
+  TrackJobIdRoute: TrackJobIdRoute,
   ApiPublicApprovalActionRoute: ApiPublicApprovalActionRoute,
   ApiPublicInboundEmailRoute: ApiPublicInboundEmailRoute,
   StatementAccountIdMonthRoute: StatementAccountIdMonthRoute,
@@ -549,3 +591,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

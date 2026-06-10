@@ -39,6 +39,12 @@ export interface Driver {
   certifications?: Certification[];
 }
 
+export interface JobPhoto {
+  url: string;
+  label: string; // e.g. "Before tow", "After drop-off", "Scene"
+  ts: number;
+}
+
 export interface Job {
   id: string;
   caller: string;
@@ -60,6 +66,9 @@ export interface Job {
   assignedAt?: number;
   enRouteAt?: number;
   onSceneAt?: number;
+  publicToken?: string;
+  photos?: JobPhoto[];
+  signatureUrl?: string;
 }
 
 export interface HistoryJob {
@@ -71,6 +80,9 @@ export interface HistoryJob {
   amount: number;
   billing: BillingStatus;
   responseMin: number;
+  completedAt?: number; // ms epoch
+  photos?: JobPhoto[];
+  signatureUrl?: string;
 }
 
 export interface ChatMsg {

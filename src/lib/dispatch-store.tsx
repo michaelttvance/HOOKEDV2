@@ -14,6 +14,7 @@ import { useAuth } from "./use-auth";
 import { sendDispatchChat, type DispatchSnapshot } from "./ai.functions";
 import { sendSms } from "./sms.functions";
 import { updateJobEta } from "./driver.functions";
+import { trackingUrl } from "./media";
 import {
   JOB_PRESETS,
   type Driver,
@@ -382,9 +383,9 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
           .update({ status: "en_route", eta_min: etaMin, current_job_id: jobId })
           .eq("id", driverId),
       ]);
-      // Queue assigned SMS
+      // Queue assigned SMS (with live tracking link)
       if (job && driver && job.phone) {
-        const body = renderTemplate(smsTemplates.assigned, {
+        let body = renderTemplate(smsTemplates.assigned, {
           name: job.caller.split(" ")[0],
           driver: driver.name,
           truck: driver.truck,
@@ -392,6 +393,9 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
           phone: driver.phone ?? "",
           company: companyName,
         });
+        if (job.publicToken) {
+          body += ` Track your driver live: ${trackingUrl(jobId, job.publicToken)}`;
+        }
         await enqueueSms(jobId, "assigned", body, job.phone);
       }
       qc.invalidateQueries({ queryKey: ["jobs", companyId] });
@@ -462,25 +466,18 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
     async (jobId: string, status: JobStatus) => {
       const j = jobs.find((x) => x.id === jobId);
       if (status === "Complete") {
-        // Queue complete SMS BEFORE deleting the job row (uses current job data)
+        // Queue complete SMS BEFORE deleting the job row (uses current job data).
+        // The review ask rides along in the same text — reliable even if this tab closes.
         if (j && j.phone) {
-          const body = renderTemplate(smsTemplates.complete, {
+          let body = renderTemplate(smsTemplates.complete, {
             name: j.caller.split(" ")[0],
             amount: j.estPrice,
             company: companyName,
           });
+          if (googleReviewUrl && j.priority !== "Urgent") {
+            body += ` Loved the service? A quick review means the world to us: ${googleReviewUrl}`;
+          }
           await enqueueSms(jobId, "complete", body, j.phone);
-        }
-        // Schedule a Google review request 30 min after completion (skip urgent jobs)
-        if (j && j.phone && j.priority !== "Urgent" && googleReviewUrl) {
-          const firstName = j.caller.split(" ")[0];
-          const reviewBody = `Hi ${firstName}, hope your experience with ${companyName} was great! If we earned it, a quick review means the world to us: ${googleReviewUrl}`;
-          const toPhone = j.phone;
-          setTimeout(() => {
-            sendSms({ data: { to: toPhone, body: reviewBody } }).catch((err) =>
-              console.error("Review SMS failed", err),
-            );
-          }, 30 * 60 * 1000);
         }
         const { error } = await supabase.rpc("complete_job", { _job_id: jobId });
         if (error) console.error("complete_job error", error);

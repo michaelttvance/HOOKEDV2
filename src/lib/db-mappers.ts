@@ -2,6 +2,7 @@ import type {
   Driver,
   DriverStatus,
   Job,
+  JobPhoto,
   JobStatus,
   JobType,
   JobPriority,
@@ -95,7 +96,17 @@ export function mapJob(r: Row): Job {
     assignedAt: r.assigned_at ? new Date(r.assigned_at as string).getTime() : undefined,
     enRouteAt: r.en_route_at ? new Date(r.en_route_at as string).getTime() : undefined,
     onSceneAt: r.on_scene_at ? new Date(r.on_scene_at as string).getTime() : undefined,
+    publicToken: (r.public_token as string) ?? "",
+    photos: mapPhotos(r.photos),
+    signatureUrl: (r.signature_url as string | null) ?? undefined,
   };
+}
+
+function mapPhotos(raw: unknown): JobPhoto[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (p): p is JobPhoto => !!p && typeof p === "object" && typeof (p as JobPhoto).url === "string",
+  );
 }
 
 export function mapHistory(r: Row): HistoryJob {
@@ -108,6 +119,9 @@ export function mapHistory(r: Row): HistoryJob {
     amount: Number(r.price ?? 0),
     billing: BILLING_MAP[r.payment_status as string] ?? "Pending",
     responseMin: (r.response_minutes as number) ?? 10,
+    completedAt: new Date(r.completed_at as string).getTime(),
+    photos: mapPhotos(r.photos),
+    signatureUrl: (r.signature_url as string | null) ?? undefined,
   };
 }
 

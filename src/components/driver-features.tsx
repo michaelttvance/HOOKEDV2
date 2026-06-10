@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Camera,
   CheckCircle2,
@@ -9,8 +10,10 @@ import {
   Briefcase,
   TrendingUp,
 } from "lucide-react";
-import type { Job, Driver } from "../lib/seed-data";
+import type { Job, JobPhoto, Driver } from "../lib/seed-data";
 import { useDispatch } from "../lib/dispatch-store";
+import { useAuth } from "../lib/use-auth";
+import { addJobPhoto, setJobSignature } from "../lib/media";
 import { cn } from "../lib/utils";
 
 /* ───────────────────────── Pre/Post Checklist ───────────────────────── */
@@ -95,36 +98,45 @@ export function PreJobChecklist({
 
 /* ───────────────────────── Vehicle Condition Photos ───────────────────────── */
 
-interface CondPhoto {
-  ts: number;
-}
+const PHOTO_SLOTS = ["Before tow", "After drop-off", "Scene"] as const;
 
-export function VehicleConditionPhotos({ jobId }: { jobId: string }) {
-  const [before, setBefore] = useState<CondPhoto | null>(null);
-  const [after, setAfter] = useState<CondPhoto | null>(null);
+export function VehicleConditionPhotos({ job }: { job: Job }) {
+  const qc = useQueryClient();
+  const { profile } = useAuth();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setBefore(null);
-    setAfter(null);
-  }, [jobId]);
+  async function capture(label: string, file: File) {
+    setBusy(label);
+    setError(null);
+    try {
+      await addJobPhoto(job.id, label, file);
+      qc.invalidateQueries({ queryKey: ["jobs", profile.companyId] });
+    } catch (err) {
+      console.error("Photo upload failed", err);
+      setError("Upload failed — check your connection and try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div>
       <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Vehicle condition
+        Job photos · saved to record
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <PhotoSlot
-          label="Before tow"
-          photo={before}
-          onCapture={() => setBefore({ ts: Date.now() })}
-        />
-        <PhotoSlot
-          label="After drop-off"
-          photo={after}
-          onCapture={() => setAfter({ ts: Date.now() })}
-        />
+      <div className="grid grid-cols-3 gap-2">
+        {PHOTO_SLOTS.map((label) => (
+          <PhotoSlot
+            key={label}
+            label={label}
+            photo={(job.photos ?? []).filter((p) => p.label === label).at(-1) ?? null}
+            uploading={busy === label}
+            onCapture={(file) => capture(label, file)}
+          />
+        ))}
       </div>
+      {error && <div className="mt-1.5 text-[11px] text-urgent">{error}</div>}
     </div>
   );
 }
@@ -132,59 +144,76 @@ export function VehicleConditionPhotos({ jobId }: { jobId: string }) {
 function PhotoSlot({
   label,
   photo,
+  uploading,
   onCapture,
 }: {
   label: string;
-  photo: CondPhoto | null;
-  onCapture: () => void;
+  photo: JobPhoto | null;
+  uploading: boolean;
+  onCapture: (file: File) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   return (
-    <button
-      type="button"
-      onClick={onCapture}
-      className={cn(
-        "flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-center text-xs transition-colors",
-        photo
-          ? "border-success/40 bg-success/10 text-success"
-          : "border-dashed border-border bg-surface text-muted-foreground hover:border-primary hover:text-primary",
-      )}
-    >
-      {photo ? (
-        <>
-          <CheckCircle2 className="h-5 w-5" />
-          <span className="font-semibold">{label}</span>
-          <span className="font-mono text-[10px] text-muted-foreground">
-            {new Date(photo.ts).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </>
-      ) : (
-        <>
-          <Camera className="h-5 w-5" />
-          <span className="font-semibold">{label}</span>
-          <span className="text-[10px]">Tap to capture</span>
-        </>
-      )}
-    </button>
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onCapture(f);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          "relative flex h-24 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border p-2 text-center text-xs transition-colors",
+          photo
+            ? "border-success/40"
+            : "border-dashed border-border bg-surface text-muted-foreground hover:border-primary hover:text-primary",
+          uploading && "opacity-60",
+        )}
+      >
+        {photo ? (
+          <>
+            <img
+              src={photo.url}
+              alt={label}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[9px] font-semibold text-white">
+              {label} ✓
+            </span>
+          </>
+        ) : (
+          <>
+            <Camera className="h-5 w-5" />
+            <span className="text-[10px] font-semibold leading-tight">{label}</span>
+            <span className="text-[9px]">{uploading ? "Uploading…" : "Tap to capture"}</span>
+          </>
+        )}
+      </button>
+    </>
   );
 }
 
 /* ───────────────────────── Signature Pad ───────────────────────── */
 
-export function SignaturePad({
-  jobId,
-  signed,
-  onSigned,
-}: {
-  jobId: string;
-  signed: boolean;
-  onSigned: () => void;
-}) {
+export function SignaturePad({ job }: { job: Job }) {
+  const qc = useQueryClient();
+  const { profile } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const hasInkRef = useRef(false);
+  const jobId = job.id;
+  const signed = !!job.signatureUrl;
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -203,6 +232,24 @@ export function SignaturePad({
     ctx.lineJoin = "round";
     hasInkRef.current = false;
   }, [jobId, signed]);
+
+  async function save() {
+    const c = canvasRef.current;
+    if (!c || !hasInkRef.current || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const blob = await new Promise<Blob | null>((resolve) => c.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Could not read signature");
+      await setJobSignature(jobId, blob);
+      qc.invalidateQueries({ queryKey: ["jobs", profile.companyId] });
+    } catch (err) {
+      console.error("Signature save failed", err);
+      setError("Couldn't save signature — try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function pos(e: React.PointerEvent) {
     const c = canvasRef.current!;
@@ -241,12 +288,17 @@ export function SignaturePad({
 
   if (signed) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-success/40 bg-success/10 px-3 py-3 text-sm">
-        <CheckCircle2 className="h-5 w-5 text-success" />
+      <div className="flex items-center gap-3 rounded-xl border border-success/40 bg-success/10 px-3 py-3 text-sm">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
         <div className="flex-1">
           <div className="font-semibold text-success">Customer signature captured</div>
-          <div className="text-[11px] text-muted-foreground">Job complete · saved to record</div>
+          <div className="text-[11px] text-muted-foreground">Saved to job record</div>
         </div>
+        <img
+          src={job.signatureUrl}
+          alt="Customer signature"
+          className="h-10 w-24 rounded border border-border bg-background object-contain"
+        />
       </div>
     );
   }
@@ -277,14 +329,13 @@ export function SignaturePad({
       </div>
       <button
         type="button"
-        onClick={() => {
-          if (!hasInkRef.current) return;
-          onSigned();
-        }}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.99]"
+        disabled={saving}
+        onClick={save}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.99] disabled:opacity-60"
       >
-        <CheckCircle2 className="h-4 w-4" /> Capture signature
+        <CheckCircle2 className="h-4 w-4" /> {saving ? "Saving…" : "Capture signature"}
       </button>
+      {error && <div className="mt-1.5 text-[11px] text-urgent">{error}</div>}
     </div>
   );
 }

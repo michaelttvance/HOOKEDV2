@@ -20,6 +20,7 @@ import {
   Warehouse,
   ShieldCheck,
   Building2,
+  BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DispatchProvider, useDispatch } from "../../lib/dispatch-store";
@@ -81,6 +82,7 @@ const NAV_DISPATCHER = [
   { to: "/driver", label: "Driver", icon: Smartphone },
   { to: "/impound", label: "Impound Lot", icon: Warehouse },
   { to: "/billing", label: "Billing", icon: Receipt },
+  { to: "/insights", label: "Insights", icon: BarChart3 },
   { to: "/rotations", label: "Rotations", icon: ShieldCheck },
   { to: "/motor-clubs", label: "Motor Clubs", icon: Building2 },
   { to: "/settings", label: "Settings", icon: SettingsIcon },

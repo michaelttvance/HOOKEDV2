@@ -810,11 +810,11 @@ function BentoFeatures() {
       </Reveal>
 
       {[
-        { icon: MapPin, title: "Live GPS Tracking", description: "Every truck on a live map with real-time ETAs powered by Google Maps." },
-        { icon: Smartphone, title: "Driver Mobile App", description: "Accept jobs, navigate, snap photos, and update status from any phone." },
+        { icon: MapPin, title: "Live Customer Tracking", description: "Customers get an Uber-style link to watch their driver approach in real time — fewer 'where are you?' calls." },
+        { icon: Smartphone, title: "Driver Mobile App", description: "Accept jobs, navigate, capture condition photos & customer signatures from any phone." },
         { icon: Receipt, title: "Billing & Invoicing", description: "Auto-generate invoices and statements from completed jobs and get paid faster." },
         { icon: Warehouse, title: "Impound Management", description: "Track lot inventory, release paperwork, and storage-fee calculations." },
-        { icon: ShieldCheck, title: "Police Rotations", description: "Manage rotation schedules and law-enforcement call logs, fully auditable." },
+        { icon: BarChart3, title: "Business Insights", description: "Revenue trends, driver leaderboards, busiest hours, and response times at a glance." },
         { icon: Building2, title: "Motor Club Tracking", description: "Track motor club jobs, payouts, and which contracts are worth your time." },
       ].map((f, i) => (
         <Reveal key={f.title} delay={i * 80}>
@@ -1238,21 +1238,25 @@ function LiveDashboardPreview() {
 function ComparisonTable() {
   const rows = [
     "AI driver suggestions",
+    "Customer 'track my tow' live link",
     "Live GPS map & ETAs",
     "Mobile driver app (no hardware)",
+    "Photo & e-signature capture",
     "Built-in billing & statements",
+    "Business insights dashboard",
     "Impound lot management",
-    "Police rotation tracking",
     "Motor club tracking",
     "Setup in under a day",
   ];
   // index 0 = Hooked, 1 = Legacy software, 2 = Spreadsheets/paper
   const matrix: Array<[boolean, boolean, boolean]> = [
     [true, false, false],
+    [true, false, false],
     [true, true, false],
     [true, false, false],
     [true, true, false],
     [true, true, false],
+    [true, false, false],
     [true, true, false],
     [true, true, false],
     [true, false, false],

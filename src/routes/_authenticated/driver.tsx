@@ -6,7 +6,6 @@ import {
   Navigation,
   MapPin,
   Car,
-  Camera,
   CheckCircle2,
   Truck,
 } from "lucide-react";
@@ -44,15 +43,12 @@ const FLOW: { key: JobStatus; label: string }[] = [
 function DriverView() {
   const { jobs, drivers, activeDriverJobId, setActiveDriverJob, updateJobStatus } = useDispatch();
   const [notes, setNotes] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
   const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
-  const [signed, setSigned] = useState<Record<string, boolean>>({});
 
   const assigned = jobs.filter((j) => j.assignedDriverId);
   const job = jobs.find((j) => j.id === activeDriverJobId) ?? assigned[0] ?? null;
   const driver = job ? drivers.find((d) => d.id === job.assignedDriverId) : null;
   const isChecklistDone = job ? !!checklistDone[job.id] : false;
-  const isSigned = job ? !!signed[job.id] : false;
 
   // Live GPS — watch position while there's an active, non-complete job
   const driverIdForWatch = driver?.id ?? null;
@@ -199,13 +195,7 @@ function DriverView() {
 
               <RequestBackupButton job={job} />
 
-              {job.status === "Complete" && (
-                <SignaturePad
-                  jobId={job.id}
-                  signed={isSigned}
-                  onSigned={() => setSigned((prev) => ({ ...prev, [job.id]: true }))}
-                />
-              )}
+              {job.status === "OnScene" && <SignaturePad job={job} />}
 
               <NavigateMenu location={job.location} />
 
@@ -230,28 +220,7 @@ function DriverView() {
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Photos
-                </label>
-                <div className="flex gap-2">
-                  {photos.map((p, i) => (
-                    <div key={i} className="flex h-16 w-16 items-center justify-center rounded-md border border-border bg-surface text-[10px] text-muted-foreground">
-                      {p}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setPhotos((p) => [...p, `IMG_${p.length + 1}`])}
-                    className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
-                  >
-                    <Camera className="h-4 w-4" />
-                    Add
-                  </button>
-                </div>
-              </div>
-
-              <VehicleConditionPhotos jobId={job.id} />
+              <VehicleConditionPhotos job={job} />
 
               <DriverEarningsPanel driver={driver} />
 

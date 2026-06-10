@@ -9,9 +9,13 @@ import {
   Clock,
   CheckCircle2,
   Sparkles,
+  Link2,
+  Check,
+  PenLine,
 } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import { useDispatch } from "../lib/dispatch-store";
+import { trackingUrl } from "../lib/media";
 import type { Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
 
@@ -36,8 +40,21 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const suggestion = job.status === "Unassigned" ? bestDriverFor(job.id) : null;
   const smsLog = smsByJob[job.id] ?? [];
   const [notes, setNotes] = useState(job.notes ?? "");
-  const [photos, setPhotos] = useState<string[]>([]);
   const [invoiced, setInvoiced] = useState(false);
+  const jobPhotos = job.photos ?? [];
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  async function copyTrackingLink() {
+    if (!job.publicToken) return;
+    const url = trackingUrl(job.id, job.publicToken);
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1800);
+    } catch {
+      window.prompt("Copy this tracking link", url);
+    }
+  }
 
   // Highlight timeline based on current job status
   const idx = statusIndex(job.status);
@@ -58,6 +75,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
       amount: job.estPrice,
       billing: "Pending",
       responseMin: Math.max(5, Math.round((Date.now() - job.receivedAt) / 60000)),
+      completedAt: Date.now(),
     });
     invoiceHistory(id);
     setInvoiced(true);
@@ -91,12 +109,24 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
               </span>
             </div>
             <div className="mt-1 truncate text-xl font-semibold">{job.caller}</div>
-            <a
-              href={`tel:${job.phone.replace(/\D/g, "")}`}
-              className="mt-1 inline-flex items-center gap-1.5 font-mono text-sm text-primary hover:underline"
-            >
-              <Phone className="h-3.5 w-3.5" /> {job.phone}
-            </a>
+            <div className="mt-1 flex flex-wrap items-center gap-3">
+              <a
+                href={`tel:${job.phone.replace(/\D/g, "")}`}
+                className="inline-flex items-center gap-1.5 font-mono text-sm text-primary hover:underline"
+              >
+                <Phone className="h-3.5 w-3.5" /> {job.phone}
+              </a>
+              {job.publicToken && (
+                <button
+                  onClick={copyTrackingLink}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:border-primary hover:text-primary"
+                  title="Copy the customer-facing live tracking link"
+                >
+                  {linkCopied ? <Check className="h-3 w-3 text-success" /> : <Link2 className="h-3 w-3" />}
+                  {linkCopied ? "Copied!" : "Copy tracking link"}
+                </button>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -231,22 +261,41 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
               />
             </Section>
 
-            <Section title="Photos">
-              <div className="flex flex-wrap gap-2">
-                {photos.map((p, i) => (
-                  <div key={i} className="flex h-16 w-16 items-center justify-center rounded-md border border-border bg-background text-[10px] text-muted-foreground">
-                    {p}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPhotos((p) => [...p, `IMG_${p.length + 1}`])}
-                  className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
-                >
-                  <Camera className="h-4 w-4" />
-                  Upload
-                </button>
-              </div>
+            <Section title={
+              <span className="flex items-center gap-1.5">
+                <Camera className="h-3.5 w-3.5" /> Photos ({jobPhotos.length})
+              </span>
+            }>
+              {jobPhotos.length === 0 ? (
+                <div className="rounded-md border border-dashed border-border bg-background p-3 text-center text-[11px] text-muted-foreground">
+                  No photos yet. Drivers capture condition photos from the driver app.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {jobPhotos.map((p) => (
+                    <a
+                      key={p.url}
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative h-20 w-20 overflow-hidden rounded-md border border-border"
+                      title={`${p.label} · ${new Date(p.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                    >
+                      <img src={p.url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[8px] font-semibold text-white">
+                        {p.label}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {job.signatureUrl && (
+                <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/5 p-2">
+                  <PenLine className="h-3.5 w-3.5 shrink-0 text-success" />
+                  <span className="flex-1 text-[11px] text-muted-foreground">Customer signature on file</span>
+                  <img src={job.signatureUrl} alt="Signature" className="h-8 w-20 rounded border border-border bg-background object-contain" />
+                </div>
+              )}
             </Section>
 
             <Section title={
