@@ -207,7 +207,7 @@ function RevenueChart({ data, days }: { data: HistoryJob[]; days: number }) {
         {series.map((s) => (
           <div
             key={s.date}
-            className="group relative flex-1"
+            className="group relative flex h-full flex-1 items-end"
             title={`${s.label}: $${s.revenue.toLocaleString()} · ${s.jobs} job${s.jobs === 1 ? "" : "s"}`}
           >
             <div
@@ -359,7 +359,7 @@ function BusyHours({ data }: { data: HistoryJob[] }) {
     <div>
       <div className="flex h-28 items-end gap-[3px]">
         {hours.map((count, h) => (
-          <div key={h} className="group relative flex-1" title={`${fmtHour(h)}: ${count} job${count === 1 ? "" : "s"}`}>
+          <div key={h} className="group relative flex h-full flex-1 items-end" title={`${fmtHour(h)}: ${count} job${count === 1 ? "" : "s"}`}>
             <div
               className={cn(
                 "w-full rounded-t-sm transition-all",
