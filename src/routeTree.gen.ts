@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RejectedRouteImport } from './routes/rejected'
 import { Route as PendingRouteImport } from './routes/pending'
+import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
@@ -59,6 +60,11 @@ const RejectedRoute = RejectedRouteImport.update({
 const PendingRoute = PendingRouteImport.update({
   id: '/pending',
   path: '/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRoute = OwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/forgot-password'
+    | '/owner'
     | '/pending'
     | '/rejected'
     | '/reset-password'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/forgot-password'
+    | '/owner'
     | '/pending'
     | '/rejected'
     | '/reset-password'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/forgot-password'
+    | '/owner'
     | '/pending'
     | '/rejected'
     | '/reset-password'
@@ -343,6 +355,7 @@ export interface RootRouteChildren {
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  OwnerRoute: typeof OwnerRoute
   PendingRoute: typeof PendingRoute
   RejectedRoute: typeof RejectedRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -390,6 +403,13 @@ declare module '@tanstack/react-router' {
       path: '/pending'
       fullPath: '/pending'
       preLoaderRoute: typeof PendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner': {
+      id: '/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof OwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -577,6 +597,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  OwnerRoute: OwnerRoute,
   PendingRoute: PendingRoute,
   RejectedRoute: RejectedRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -591,13 +612,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

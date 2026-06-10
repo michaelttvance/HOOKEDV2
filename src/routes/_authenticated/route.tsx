@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Building2,
   BarChart3,
+  Crown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DispatchProvider, useDispatch } from "../../lib/dispatch-store";
@@ -213,16 +214,16 @@ function AppShell() {
           {!isDriver && <ShareRequestLink companyId={profile.companyId} />}
           {!isDriver && isHookedAdmin && (
             <Link
-              to="/admin"
+              to="/owner"
               className={cn(
                 "mb-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                pathname.startsWith("/admin")
+                pathname.startsWith("/owner")
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
-              <ShieldCheck className="h-4 w-4" />
-              Hooked Admin
+              <Crown className="h-4 w-4" />
+              Owner Console
             </Link>
           )}
         </nav>
