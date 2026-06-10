@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type CountResult = { count: number | null; error: unknown };
@@ -22,6 +23,24 @@ function countBy<T extends Record<string, unknown>>(rows: T[], key: keyof T) {
     acc[value] = (acc[value] ?? 0) + 1;
     return acc;
   }, {});
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80);
+}
+
+function trackedUrl(campaign: { name: string; channel: string; target_url?: string | null }) {
+  const base = campaign.target_url || "https://hookedv-2.vercel.app/apply";
+  const url = new URL(base);
+  url.searchParams.set("utm_source", slugify(campaign.channel || "other"));
+  url.searchParams.set("utm_medium", "owner_console");
+  url.searchParams.set("utm_campaign", slugify(campaign.name));
+  return url.toString();
 }
 
 async function tableCount(table: string, filters?: (query: any) => any) {
@@ -58,6 +77,7 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
       applicationsRes,
       activeJobsRes,
       completedJobsRes,
+      campaignsRes,
     ] = await Promise.all([
       tableCount("companies"),
       tableCount("profiles"),
@@ -80,7 +100,7 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
         .limit(500),
       admin
         .from("applications")
-        .select("id, created_at, full_name, business_name, email, city_state, truck_count, current_software, heard_from, billing_preference, status, invited_at")
+        .select("id, created_at, full_name, business_name, email, city_state, truck_count, current_software, heard_from, billing_preference, status, invited_at, utm_source, utm_medium, utm_campaign, utm_content, referrer")
         .order("created_at", { ascending: false })
         .limit(100),
       admin
@@ -94,9 +114,14 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
         .gte("completed_at", since30)
         .order("completed_at", { ascending: false })
         .limit(1000),
+      admin
+        .from("marketing_campaigns")
+        .select("id, name, channel, status, budget, goal, notes, target_url, created_at, updated_at")
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
-    for (const result of [companiesRes, profilesRes, applicationsRes, activeJobsRes, completedJobsRes]) {
+    for (const result of [companiesRes, profilesRes, applicationsRes, activeJobsRes, completedJobsRes, campaignsRes]) {
       if (result.error) throw result.error;
     }
 
@@ -105,6 +130,7 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
     const applications = applicationsRes.data ?? [];
     const jobs = activeJobsRes.data ?? [];
     const completed = completedJobsRes.data ?? [];
+    const campaigns = campaignsRes.data ?? [];
 
     const revenue30 = completed.reduce(
       (sum: number, row: any) => sum + Number(row.price ?? 0) + Number(row.tax_amount ?? 0),
@@ -143,6 +169,32 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
     });
 
     const applications7 = applications.filter((a: any) => new Date(a.created_at).getTime() >= new Date(since7).getTime()).length;
+    const campaignStats = campaigns.map((campaign: any) => {
+      const slug = slugify(campaign.name);
+      const channelSlug = slugify(campaign.channel);
+      const leads = applications.filter((app: any) => {
+        const appCampaign = slugify(app.utm_campaign ?? "");
+        const appSource = slugify(app.utm_source ?? app.heard_from ?? "");
+        return appCampaign === slug || (!appCampaign && appSource === channelSlug);
+      });
+      const invited = leads.filter((app: any) => app.status === "invited").length;
+      const budget = Number(campaign.budget ?? 0);
+      return {
+        ...campaign,
+        budget,
+        trackingUrl: trackedUrl(campaign),
+        leads: leads.length,
+        invited,
+        costPerLead: leads.length > 0 && budget > 0 ? budget / leads.length : null,
+        conversionRate: leads.length > 0 ? Math.round((invited / leads.length) * 100) : 0,
+      };
+    });
+    const attributedApplications = applications.filter((app: any) => app.utm_source || app.utm_campaign).length;
+    const campaignLeads = campaignStats.reduce((sum: number, c: any) => sum + c.leads, 0);
+    const activeCampaigns = campaignStats.filter((c: any) => c.status === "active").length;
+    const totalCampaignBudget = campaignStats
+      .filter((c: any) => c.status === "active")
+      .reduce((sum: number, c: any) => sum + Number(c.budget ?? 0), 0);
 
     return {
       generatedAt: new Date().toISOString(),
@@ -160,17 +212,74 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
         revenue30,
         paid30,
         avgResponse30,
+        attributedApplications,
+        campaignLeads,
+        activeCampaigns,
+        totalCampaignBudget,
       },
       breakdowns: {
         applicationStatus: countBy(applications, "status"),
         truckCount: countBy(applications, "truck_count"),
         software: countBy(applications, "current_software"),
         heardFrom: countBy(applications, "heard_from"),
+        utmSource: countBy(applications.filter((a: any) => a.utm_source), "utm_source"),
+        utmCampaign: countBy(applications.filter((a: any) => a.utm_campaign), "utm_campaign"),
         jobStatus: countBy(jobs, "status"),
         jobPriority: countBy(jobs, "priority"),
         completedJobType30: countBy(completed, "job_type"),
       },
       recentApplications: applications.slice(0, 12),
       companies: companyStats.slice(0, 12),
+      campaigns: campaignStats,
     };
+  });
+
+const CampaignInput = z.object({
+  name: z.string().trim().min(1).max(160),
+  channel: z.string().trim().min(1).max(80),
+  budget: z.coerce.number().min(0).max(1_000_000).default(0),
+  goal: z.string().trim().max(500).optional().or(z.literal("")),
+  notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  targetUrl: z.string().trim().url().max(500).default("https://hookedv-2.vercel.app/apply"),
+});
+
+export const createMarketingCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CampaignInput.parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await isOwner(context.userId))) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("marketing_campaigns")
+      .insert({
+        name: data.name,
+        channel: data.channel,
+        budget: data.budget,
+        goal: data.goal || null,
+        notes: data.notes || null,
+        target_url: data.targetUrl,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return { ok: true, id: row.id };
+  });
+
+const CampaignStatusInput = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["active", "paused", "ended"]),
+});
+
+export const setMarketingCampaignStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CampaignStatusInput.parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await isOwner(context.userId))) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("marketing_campaigns")
+      .update({ status: data.status })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
   });

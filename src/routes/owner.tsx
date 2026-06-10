@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -10,7 +11,11 @@ import {
   DollarSign,
   Download,
   Gauge,
+  Link2,
   Loader2,
+  Megaphone,
+  Pause,
+  Play,
   Sparkles,
   TrendingUp,
   Truck,
@@ -18,7 +23,11 @@ import {
   Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getOwnerMetrics } from "@/lib/owner.functions";
+import {
+  createMarketingCampaign,
+  getOwnerMetrics,
+  setMarketingCampaignStatus,
+} from "@/lib/owner.functions";
 import { cn } from "@/lib/utils";
 
 const OWNER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
@@ -117,6 +126,12 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
         <MetricCard icon={DollarSign} label="Customer revenue tracked" value={money(totals.revenue30)} sub={`${money(totals.paid30)} paid in last 30 days`} tone="green" />
       </section>
 
+      <section className="grid gap-3 md:grid-cols-3">
+        <MetricCard icon={Megaphone} label="Active campaigns" value={fmt(totals.activeCampaigns)} sub={`${money(totals.totalCampaignBudget)} active budget`} tone="amber" />
+        <MetricCard icon={Link2} label="Attributed leads" value={fmt(totals.attributedApplications)} sub={`${fmt(totals.campaignLeads)} matched to campaigns`} />
+        <MetricCard icon={BarChart3} label="Marketing conversion" value={`${conversion}%`} sub="Applications invited to setup" tone="green" />
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <Panel title="Growth Funnel" action={`${conversion}% app-to-invite`}>
           <div className="grid gap-3 sm:grid-cols-4">
@@ -146,6 +161,28 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
         </Panel>
         <Panel title="Active Job Mix">
           <BarList data={data.breakdowns.jobStatus} />
+        </Panel>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <Panel title="Campaign Control" action="Create, track, pause">
+          <CampaignManager campaigns={data.campaigns} />
+        </Panel>
+        <Panel title="Attribution Analytics" action="UTM tracking">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">UTM Sources</div>
+              <BarList data={data.breakdowns.utmSource} />
+            </div>
+            <div>
+              <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">UTM Campaigns</div>
+              <BarList data={data.breakdowns.utmCampaign} />
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+            Use campaign tracking links anywhere you market Hooked. Every application submitted from
+            that link is tied back to the campaign, source, cost per lead, and invite conversion.
+          </div>
         </Panel>
       </section>
 
@@ -207,6 +244,184 @@ function OwnerMetrics({ data }: { data: Awaited<ReturnType<typeof getOwnerMetric
         </Panel>
       </section>
     </>
+  );
+}
+
+type Campaign = Awaited<ReturnType<typeof getOwnerMetrics>>["campaigns"][number];
+
+function CampaignManager({ campaigns }: { campaigns: Campaign[] }) {
+  const qc = useQueryClient();
+  const createCampaign = useServerFn(createMarketingCampaign);
+  const setStatus = useServerFn(setMarketingCampaignStatus);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [draft, setDraft] = useState({
+    name: "",
+    channel: "Google",
+    budget: "250",
+    goal: "",
+    notes: "",
+    targetUrl: "https://hookedv-2.vercel.app/apply",
+  });
+
+  const createM = useMutation({
+    mutationFn: () =>
+      createCampaign({
+        data: {
+          name: draft.name,
+          channel: draft.channel,
+          budget: Number(draft.budget) || 0,
+          goal: draft.goal,
+          notes: draft.notes,
+          targetUrl: draft.targetUrl,
+        },
+      }),
+    onSuccess: () => {
+      setDraft({
+        name: "",
+        channel: "Google",
+        budget: "250",
+        goal: "",
+        notes: "",
+        targetUrl: "https://hookedv-2.vercel.app/apply",
+      });
+      qc.invalidateQueries({ queryKey: ["owner-metrics"] });
+    },
+  });
+
+  const statusM = useMutation({
+    mutationFn: (vars: { id: string; status: "active" | "paused" | "ended" }) =>
+      setStatus({ data: vars }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner-metrics"] }),
+  });
+
+  async function copy(url: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(id);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      window.prompt("Copy campaign URL", url);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          createM.mutate();
+        }}
+        className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 lg:grid-cols-6"
+      >
+        <input
+          required
+          value={draft.name}
+          onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+          placeholder="Campaign name"
+          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm lg:col-span-2"
+        />
+        <select
+          value={draft.channel}
+          onChange={(e) => setDraft((p) => ({ ...p, channel: e.target.value }))}
+          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+        >
+          <option>Google</option>
+          <option>Facebook Group</option>
+          <option>Referral</option>
+          <option>Towing Association</option>
+          <option>Email</option>
+          <option>Other</option>
+        </select>
+        <input
+          value={draft.budget}
+          onChange={(e) => setDraft((p) => ({ ...p, budget: e.target.value }))}
+          inputMode="decimal"
+          placeholder="Budget"
+          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+        />
+        <input
+          value={draft.goal}
+          onChange={(e) => setDraft((p) => ({ ...p, goal: e.target.value }))}
+          placeholder="Goal"
+          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm lg:col-span-2"
+        />
+        <input
+          value={draft.targetUrl}
+          onChange={(e) => setDraft((p) => ({ ...p, targetUrl: e.target.value }))}
+          placeholder="Landing URL"
+          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm lg:col-span-5"
+        />
+        <button
+          type="submit"
+          disabled={createM.isPending}
+          className="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+        >
+          {createM.isPending ? "Adding..." : "Add campaign"}
+        </button>
+      </form>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-100 text-left text-[11px] uppercase tracking-wider text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Campaign</th>
+              <th className="px-3 py-2">Budget</th>
+              <th className="px-3 py-2">Leads</th>
+              <th className="px-3 py-2">CPL</th>
+              <th className="px-3 py-2">Conv.</th>
+              <th className="px-3 py-2 text-right">Control</th>
+            </tr>
+          </thead>
+          <tbody>
+            {campaigns.map((campaign) => (
+              <tr key={campaign.id} className="border-t border-slate-200 align-top">
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    <StatusDot status={campaign.status} />
+                    <div>
+                      <div className="font-semibold">{campaign.name}</div>
+                      <div className="text-xs text-slate-500">{campaign.channel} · {campaign.goal || "No goal set"}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copy(campaign.trackingUrl, campaign.id)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:border-amber-300 hover:text-slate-950"
+                  >
+                    <Link2 className="h-3 w-3" /> {copied === campaign.id ? "Copied" : "Copy tracking link"}
+                  </button>
+                </td>
+                <td className="px-3 py-3">{money(campaign.budget)}</td>
+                <td className="px-3 py-3">{campaign.leads}</td>
+                <td className="px-3 py-3">{campaign.costPerLead === null ? "—" : money(campaign.costPerLead)}</td>
+                <td className="px-3 py-3">{campaign.conversionRate}%</td>
+                <td className="px-3 py-3 text-right">
+                  {campaign.status === "active" ? (
+                    <button
+                      type="button"
+                      onClick={() => statusM.mutate({ id: campaign.id, status: "paused" })}
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100"
+                    >
+                      <Pause className="h-3 w-3" /> Pause
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => statusM.mutate({ id: campaign.id, status: "active" })}
+                      className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
+                    >
+                      <Play className="h-3 w-3" /> Resume
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {createM.error && <div className="text-xs text-red-600">{(createM.error as Error).message}</div>}
+      {statusM.error && <div className="text-xs text-red-600">{(statusM.error as Error).message}</div>}
+    </div>
   );
 }
 
@@ -306,6 +521,16 @@ function TrialBadge({ days }: { days: number | null }) {
 function StatusPill({ status }: { status: string }) {
   const cls = status === "invited" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800";
   return <span className={cn("rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider", cls)}>{status}</span>;
+}
+
+function StatusDot({ status }: { status: string }) {
+  const cls =
+    status === "active"
+      ? "bg-emerald-500"
+      : status === "paused"
+        ? "bg-amber-400"
+        : "bg-slate-300";
+  return <span className={cn("mt-1 h-2.5 w-2.5 shrink-0 rounded-full", cls)} />;
 }
 
 function fmt(value: number) {

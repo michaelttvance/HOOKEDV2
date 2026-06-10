@@ -30,6 +30,12 @@ const ApplicationInput = z.object({
   heardFrom: z.enum(HEARD),
   biggestChallenge: z.string().trim().max(2000).optional().or(z.literal("")),
   billingPreference: z.enum(BILLING),
+  utmSource: z.string().trim().max(200).optional().or(z.literal("")),
+  utmMedium: z.string().trim().max(200).optional().or(z.literal("")),
+  utmCampaign: z.string().trim().max(200).optional().or(z.literal("")),
+  utmContent: z.string().trim().max(200).optional().or(z.literal("")),
+  landingPath: z.string().trim().max(500).optional().or(z.literal("")),
+  referrer: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
 export const submitApplication = createServerFn({ method: "POST" })
@@ -53,6 +59,12 @@ export const submitApplication = createServerFn({ method: "POST" })
         heard_from: data.heardFrom,
         biggest_challenge: data.biggestChallenge || null,
         billing_preference: data.billingPreference,
+        utm_source: data.utmSource || null,
+        utm_medium: data.utmMedium || null,
+        utm_campaign: data.utmCampaign || null,
+        utm_content: data.utmContent || null,
+        landing_path: data.landingPath || null,
+        referrer: data.referrer || null,
       })
       .select("id, created_at")
       .single();

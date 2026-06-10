@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Truck, Loader2, CheckCircle2 } from "lucide-react";
 import { submitApplication } from "@/lib/applications.functions";
 import { cn } from "@/lib/utils";
@@ -70,6 +70,28 @@ function ApplyPage() {
     setF((p) => ({ ...p, [k]: v }));
   }
 
+  const attribution = useMemo(() => {
+    if (typeof window === "undefined") {
+      return {
+        utmSource: "",
+        utmMedium: "",
+        utmCampaign: "",
+        utmContent: "",
+        landingPath: "",
+        referrer: "",
+      };
+    }
+    const params = new URLSearchParams(window.location.search);
+    return {
+      utmSource: params.get("utm_source") ?? "",
+      utmMedium: params.get("utm_medium") ?? "",
+      utmCampaign: params.get("utm_campaign") ?? "",
+      utmContent: params.get("utm_content") ?? "",
+      landingPath: `${window.location.pathname}${window.location.search}`,
+      referrer: document.referrer,
+    };
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -102,6 +124,7 @@ function ApplyPage() {
           heardFrom: f.heardFrom,
           biggestChallenge: f.biggestChallenge,
           billingPreference: f.billingPreference,
+          ...attribution,
         },
       });
       setDone(true);

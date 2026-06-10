@@ -27,10 +27,16 @@ export type Database = {
           heard_from: string
           id: string
           invited_at: string | null
+          landing_path: string | null
           phone: string
+          referrer: string | null
           software_complaints: string | null
           status: string
           truck_count: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           biggest_challenge?: string | null
@@ -44,10 +50,16 @@ export type Database = {
           heard_from: string
           id?: string
           invited_at?: string | null
+          landing_path?: string | null
           phone: string
+          referrer?: string | null
           software_complaints?: string | null
           status?: string
           truck_count: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           biggest_challenge?: string | null
@@ -61,10 +73,16 @@ export type Database = {
           heard_from?: string
           id?: string
           invited_at?: string | null
+          landing_path?: string | null
           phone?: string
+          referrer?: string | null
           software_complaints?: string | null
           status?: string
           truck_count?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
