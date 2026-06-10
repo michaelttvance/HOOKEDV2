@@ -130,7 +130,7 @@ function SettingsPage() {
       <div className="mx-auto max-w-2xl space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <Link to="/" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <Link to="/dashboard" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-3 w-3" /> Back to dispatch
             </Link>
             <h1 className="text-xl font-semibold">Settings</h1>

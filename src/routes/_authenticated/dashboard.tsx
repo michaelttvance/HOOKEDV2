@@ -26,14 +26,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { cn } from "../../lib/utils";
 import { VinLookup } from "../../components/vin-lookup";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dispatch Board — Hooked" },
       { name: "description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
       { property: "og:title", content: "Dispatch Board — Hooked" },
       { property: "og:description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
-      { property: "og:url", content: "https://hookaidashboard.com/" },
+      { property: "og:url", content: "https://hookaidashboard.com/dashboard" },
     ],
   }),
   component: DispatchBoard,

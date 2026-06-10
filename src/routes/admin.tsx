@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin")({
       throw redirect({ to: "/auth", search: { redirect: "/admin" } });
     }
     if ((data.user.email ?? "").toLowerCase() !== "mike@hookaidashboard.com") {
-      throw redirect({ to: "/" });
+      throw redirect({ to: "/dashboard" });
     }
   },
   component: AdminPage,

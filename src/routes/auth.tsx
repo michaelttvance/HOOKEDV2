@@ -45,7 +45,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: search.redirect ?? "/", replace: true });
+      if (data.session) navigate({ to: search.redirect ?? "/dashboard", replace: true });
     });
   }, [navigate, search.redirect]);
 
@@ -58,7 +58,7 @@ function AuthPage() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: search.redirect ?? "/", replace: true });
+        navigate({ to: search.redirect ?? "/dashboard", replace: true });
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -76,7 +76,7 @@ function AuthPage() {
         if (error) throw error;
         if (data.session) {
           notifyAdmin().catch((e) => console.warn("[signup] notify failed", e));
-          navigate({ to: search.redirect ?? "/", replace: true });
+          navigate({ to: search.redirect ?? "/dashboard", replace: true });
         } else {
           setNotice("Check your email to confirm your account, then sign in.");
           setMode("signin");
@@ -95,11 +95,11 @@ function AuthPage() {
     setLoading(true);
     try {
       const result = await oauth.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin + (search.redirect ?? "/"),
+        redirect_uri: window.location.origin + (search.redirect ?? "/dashboard"),
       });
       if (result.error) throw result.error;
       if (result.redirected) return;
-      navigate({ to: search.redirect ?? "/", replace: true });
+      navigate({ to: search.redirect ?? "/dashboard", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);

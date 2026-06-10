@@ -19,7 +19,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as RequestCompanyIdRouteImport } from './routes/request.$companyId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRotationsRouteImport } from './routes/_authenticated/rotations'
@@ -27,6 +27,7 @@ import { Route as AuthenticatedMotorClubsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedInboundEmailsRouteImport } from './routes/_authenticated/inbound-emails'
 import { Route as AuthenticatedImpoundRouteImport } from './routes/_authenticated/impound'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as StatementAccountIdMonthRouteImport } from './routes/statement.$accountId.$month'
 import { Route as ApiPublicInboundEmailRouteImport } from './routes/api/public/inbound-email'
@@ -81,10 +82,10 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RequestCompanyIdRoute = RequestCompanyIdRouteImport.update({
   id: '/request/$companyId',
@@ -122,6 +123,11 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   path: '/driver',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -144,7 +150,7 @@ const ApiPublicApprovalActionRoute = ApiPublicApprovalActionRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
   '/impound': typeof AuthenticatedImpoundRoute
   '/inbound-emails': typeof AuthenticatedInboundEmailsRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
@@ -177,6 +185,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
   '/impound': typeof AuthenticatedImpoundRoute
   '/inbound-emails': typeof AuthenticatedInboundEmailsRoute
@@ -184,13 +193,13 @@ export interface FileRoutesByTo {
   '/rotations': typeof AuthenticatedRotationsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
-  '/': typeof AuthenticatedIndexRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/accept-invite': typeof AcceptInviteRoute
   '/admin': typeof AdminRoute
@@ -202,6 +211,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
   '/_authenticated/impound': typeof AuthenticatedImpoundRoute
   '/_authenticated/inbound-emails': typeof AuthenticatedInboundEmailsRoute
@@ -209,7 +219,6 @@ export interface FileRoutesById {
   '/_authenticated/rotations': typeof AuthenticatedRotationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/billing'
+    | '/dashboard'
     | '/driver'
     | '/impound'
     | '/inbound-emails'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/statement/$accountId/$month'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/accept-invite'
     | '/admin'
     | '/apply'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/billing'
+    | '/dashboard'
     | '/driver'
     | '/impound'
     | '/inbound-emails'
@@ -257,12 +269,12 @@ export interface FileRouteTypes {
     | '/rotations'
     | '/settings'
     | '/request/$companyId'
-    | '/'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/statement/$accountId/$month'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
     | '/accept-invite'
     | '/admin'
@@ -274,6 +286,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/billing'
+    | '/_authenticated/dashboard'
     | '/_authenticated/driver'
     | '/_authenticated/impound'
     | '/_authenticated/inbound-emails'
@@ -281,13 +294,13 @@ export interface FileRouteTypes {
     | '/_authenticated/rotations'
     | '/_authenticated/settings'
     | '/request/$companyId'
-    | '/_authenticated/'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/statement/$accountId/$month'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AcceptInviteRoute: typeof AcceptInviteRoute
   AdminRoute: typeof AdminRoute
@@ -376,12 +389,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/request/$companyId': {
       id: '/request/$companyId'
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/billing': {
       id: '/_authenticated/billing'
       path: '/billing'
@@ -465,30 +485,31 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDriverRoute: typeof AuthenticatedDriverRoute
   AuthenticatedImpoundRoute: typeof AuthenticatedImpoundRoute
   AuthenticatedInboundEmailsRoute: typeof AuthenticatedInboundEmailsRoute
   AuthenticatedMotorClubsRoute: typeof AuthenticatedMotorClubsRoute
   AuthenticatedRotationsRoute: typeof AuthenticatedRotationsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDriverRoute: AuthenticatedDriverRoute,
   AuthenticatedImpoundRoute: AuthenticatedImpoundRoute,
   AuthenticatedInboundEmailsRoute: AuthenticatedInboundEmailsRoute,
   AuthenticatedMotorClubsRoute: AuthenticatedMotorClubsRoute,
   AuthenticatedRotationsRoute: AuthenticatedRotationsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AcceptInviteRoute: AcceptInviteRoute,
   AdminRoute: AdminRoute,
@@ -507,13 +528,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

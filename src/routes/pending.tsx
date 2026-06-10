@@ -48,7 +48,7 @@ function PendingPage() {
           <LogOut className="h-3 w-3" /> Sign out
         </button>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">Refresh status</Link>
+          <Link to="/dashboard" className="hover:text-foreground">Refresh status</Link>
         </p>
       </div>
     </div>

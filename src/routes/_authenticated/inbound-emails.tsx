@@ -128,7 +128,7 @@ function InboundEmailsPage() {
                         )}
                         {r.status === "job_created" && r.job_id && (
                           <Link
-                            to="/"
+                            to="/dashboard"
                             className="inline-flex items-center gap-1 rounded-md bg-success/15 px-2 py-1 text-[11px] font-semibold text-success hover:bg-success/25"
                           >
                             <CheckCircle2 className="h-3 w-3" /> View

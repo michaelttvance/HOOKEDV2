@@ -61,7 +61,7 @@ function AuthenticatedLayout() {
 }
 
 const NAV_DISPATCHER = [
-  { to: "/", label: "Dispatch", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dispatch", icon: LayoutDashboard },
   { to: "/driver", label: "Driver", icon: Smartphone },
   { to: "/impound", label: "Impound Lot", icon: Warehouse },
   { to: "/billing", label: "Billing", icon: Receipt },
@@ -147,7 +147,7 @@ function AppShell() {
         </div>
         <nav className="flex-1 overflow-y-auto px-3">
           {nav.map((item) => {
-            const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+            const active = pathname.startsWith(item.to);
             const Icon = item.icon;
             return (
               <Link
@@ -214,7 +214,7 @@ function AppShell() {
               <Menu className="h-4 w-4" />
             </button>
             <div className="truncate font-semibold tracking-tight">
-              {pathname === "/" ? "Dispatch Board"
+              {pathname.startsWith("/dashboard") ? "Dispatch Board"
                 : pathname.startsWith("/driver") ? "Driver App"
                 : pathname.startsWith("/impound") ? "Impound Lot"
                 : pathname.startsWith("/rotations") ? "Police Rotations"
