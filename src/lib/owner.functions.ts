@@ -43,6 +43,36 @@ function trackedUrl(campaign: { name: string; channel: string; target_url?: stri
   return url.toString();
 }
 
+const DEFAULT_CAMPAIGNS = [
+  {
+    name: "Google Search - Tow Dispatch",
+    channel: "Google",
+    status: "active",
+    budget: 500,
+    goal: "Capture towing companies searching for TowBook alternatives and dispatch software.",
+    notes: "Use with Google Search keywords around towing dispatch, tow software, and impound management.",
+    target_url: "https://hookedv-2.vercel.app/apply",
+  },
+  {
+    name: "Facebook Towing Groups",
+    channel: "Facebook Group",
+    status: "active",
+    budget: 250,
+    goal: "Test owner-operator interest from towing community posts.",
+    notes: "Use in towing group posts and comments when operators ask for simpler dispatch software.",
+    target_url: "https://hookedv-2.vercel.app/apply",
+  },
+  {
+    name: "Referral Partners",
+    channel: "Referral",
+    status: "active",
+    budget: 0,
+    goal: "Track referrals from industry contacts, drivers, shops, and dispatch partners.",
+    notes: "Share this link directly with people recommending Hooked.",
+    target_url: "https://hookedv-2.vercel.app/apply",
+  },
+] as const;
+
 async function tableCount(table: string, filters?: (query: any) => any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let query = (supabaseAdmin as any).from(table).select("*", { count: "exact", head: true });
@@ -130,7 +160,21 @@ export const getOwnerMetrics = createServerFn({ method: "GET" })
     const applications = applicationsRes.data ?? [];
     const jobs = activeJobsRes.data ?? [];
     const completed = completedJobsRes.data ?? [];
-    const campaigns = campaignsRes.data ?? [];
+    let campaigns = campaignsRes.data ?? [];
+    if (campaigns.length === 0) {
+      const { error: seedError } = await admin.from("marketing_campaigns").upsert(DEFAULT_CAMPAIGNS, {
+        onConflict: "name",
+        ignoreDuplicates: true,
+      });
+      if (!seedError) {
+        const { data: seededCampaigns, error: seededError } = await admin
+          .from("marketing_campaigns")
+          .select("id, name, channel, status, budget, goal, notes, target_url, created_at, updated_at")
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if (!seededError) campaigns = seededCampaigns ?? [];
+      }
+    }
 
     const revenue30 = completed.reduce(
       (sum: number, row: any) => sum + Number(row.price ?? 0) + Number(row.tax_amount ?? 0),
