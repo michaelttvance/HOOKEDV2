@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,7 +53,7 @@ const FLOW: { key: JobStatus; label: string }[] = [
 function DriverView() {
   const { profile, user } = useAuth();
   const isDriverRole = profile.role === "driver";
-  return isDriverRole ? <RealDriverApp userId={user?.id ?? null} /> : <DispatcherSimulator />;
+  return isDriverRole ? <RealDriverApp userId={user?.id ?? null} /> : <DispatcherDriverRedirect />;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -178,69 +178,20 @@ function RealDriverApp({ userId }: { userId: string | null }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   Dispatcher view — phone-frame simulator across all drivers
-   ───────────────────────────────────────────────────────────────── */
-
-function DispatcherSimulator() {
-  const { jobs, drivers, activeDriverJobId, setActiveDriverJob } = useDispatch();
-  const assigned = jobs.filter((j) => j.assignedDriverId);
-  const job = jobs.find((j) => j.id === activeDriverJobId) ?? assigned[0] ?? null;
-  const driver = job ? drivers.find((d) => d.id === job.assignedDriverId) ?? null : null;
-
-  useDriverGps(job, driver?.id ?? null);
+function DispatcherDriverRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate({ to: "/dashboard", replace: true });
+  }, [navigate]);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden bg-background">
-      {/* Job picker (sim of "switch driver") */}
-      <div className="hidden w-64 shrink-0 border-r border-border bg-surface md:flex md:flex-col">
-        <div className="border-b border-border px-4 py-3">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Active driver jobs</div>
-          <div className="text-sm font-semibold">Simulator</div>
-        </div>
-        <div className="flex-1 space-y-1 overflow-y-auto p-2">
-          {assigned.map((j) => {
-            const d = drivers.find((x) => x.id === j.assignedDriverId);
-            return (
-              <button
-                key={j.id}
-                onClick={() => setActiveDriverJob(j.id)}
-                className={cn(
-                  "block w-full rounded-md px-3 py-2 text-left text-xs transition-colors",
-                  j.id === job?.id ? "bg-primary/15 text-primary" : "hover:bg-accent",
-                )}
-              >
-                <div className="font-semibold">{d?.name}</div>
-                <div className="text-muted-foreground">{j.caller} · {j.type}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="border-t border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
-          This is the dispatcher preview. Drivers who log in with a driver account get this
-          interface full-screen, scoped to their own jobs.
-        </div>
-      </div>
-
-      {/* Phone frame */}
-      <div className="flex flex-1 items-center justify-center overflow-auto p-6">
-        <div className="w-full max-w-sm overflow-hidden rounded-[2.5rem] border-[10px] border-surface-2 bg-background shadow-2xl">
-          <div className="flex items-center justify-between bg-surface-2 px-5 py-2 font-mono text-[11px] text-muted-foreground">
-            <span>9:41</span>
-            <span className="flex items-center gap-1"><Truck className="h-3 w-3" /> Hooked</span>
-            <span>100%</span>
-          </div>
-
-          {!job ? (
-            <div className="p-10 text-center text-sm text-muted-foreground">
-              No active jobs. You're clear.
-            </div>
-          ) : (
-            <div className="p-5">
-              <JobScreen job={job} driver={driver} />
-            </div>
-          )}
-        </div>
+    <div className="flex h-full items-center justify-center p-8 text-center">
+      <div className="max-w-sm">
+        <Smartphone className="mx-auto h-10 w-10 text-muted-foreground" />
+        <div className="mt-4 text-sm font-semibold">Driver app is for driver accounts</div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Returning you to the dispatch board.
+        </p>
       </div>
     </div>
   );

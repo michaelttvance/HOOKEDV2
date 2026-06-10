@@ -79,7 +79,6 @@ function AuthenticatedLayout() {
 
 const NAV_DISPATCHER = [
   { to: "/dashboard", label: "Dispatch", icon: LayoutDashboard },
-  { to: "/driver", label: "Driver", icon: Smartphone },
   { to: "/impound", label: "Impound Lot", icon: Warehouse },
   { to: "/billing", label: "Billing", icon: Receipt },
   { to: "/insights", label: "Insights", icon: BarChart3 },
