@@ -35,6 +35,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
+const COPYRIGHT_YEAR = 2026;
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -631,7 +633,7 @@ function MarketingPage() {
             <span className="text-sm font-bold tracking-tight text-white">Hooked</span>
           </div>
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} Hooked. All rights reserved.
+            © {COPYRIGHT_YEAR} Hooked. All rights reserved.
           </p>
           <div className="flex items-center gap-5 text-xs text-slate-500">
             <a href="#features" className="hover:text-slate-300">Features</a>
