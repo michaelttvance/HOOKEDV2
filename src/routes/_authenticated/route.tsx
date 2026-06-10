@@ -47,7 +47,9 @@ export const Route = createFileRoute("/_authenticated")({
     if (status === "rejected") throw redirect({ to: "/rejected" });
 
     // Gate by trial expiration (super admin is exempt)
-    const isSuperAdmin = (data.user.email ?? "").toLowerCase() === "mike@hookaidashboard.com";
+    const isSuperAdmin = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"].includes(
+      (data.user.email ?? "").toLowerCase(),
+    );
     if (!isSuperAdmin) {
       const companies = profile?.companies as
         | { trial_ends_at?: string }

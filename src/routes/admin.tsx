@@ -32,7 +32,8 @@ export const Route = createFileRoute("/admin")({
     if (error || !data.user) {
       throw redirect({ to: "/auth", search: { redirect: "/admin" } });
     }
-    if ((data.user.email ?? "").toLowerCase() !== "mike@hookaidashboard.com") {
+    const adminEmails = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+    if (!adminEmails.includes((data.user.email ?? "").toLowerCase())) {
       throw redirect({ to: "/dashboard" });
     }
   },
