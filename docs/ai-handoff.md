@@ -11,6 +11,17 @@ Update this file before every Claude/Codex/AI session stops.
 - Current focus is Phase 3 founder/company-owner separation and launch readiness.
 - There is a dirty working tree with both reviewed and unreviewed changes. Do not revert user/other-agent work.
 
+## Current Deployment (2026-06-11)
+
+- **Live preview (staging review):** https://hookedv-2-git-preview-staging-review-hookeddispatch-project.vercel.app
+- Branch: `preview/staging-review` (off `main`; `main` NOT touched/merged/deployed).
+- Commit: `50b7a78` "Preview Hooked app updates for staging review" (53 files, +6838 / -841).
+- Build: `bun run build` PASSED (exit 0). Vercel deployment `dpl_8sAJt8YnCNj9TRKXFhYjaKgzpxcZ` state **READY**, `target: null` → **PREVIEW, not production**.
+- Added `.vercelignore` to keep secrets/archives/`artifacts/`/`local-archive/`/`scripts/` out of uploads.
+- Twilio webhook routes shipped (build-required via `routeTree.gen.ts`) but live-but-dormant on preview.
+- Pages to review: `/`, `/demo`, `/dashboard`, `/driver`, `/owner`, `/founder`, `/admin`, `/apply` (app pages need an authed Supabase session in preview).
+- Next: review preview, then decide on a dedicated, approved merge-to-`main` (production) pass.
+
 ## Last Completed Work
 
 - Created `docs/product-brief.md`.

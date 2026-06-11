@@ -26,6 +26,39 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-11 — Preview Deployment (staging review)
+
+### Goal
+
+- Deploy the current Hooked work as a **preview-only** Vercel deployment for staging review.
+- Keep the commit clean: no secrets, no archives, no `artifacts/`/`local-archive/`, no unrelated unreviewed files.
+
+### Changed
+
+- Created branch `preview/staging-review` (off `main`); `main` untouched.
+- Added `.vercelignore` (excludes `.env*`, `.mcp.json`, `.claude/`, `.codex/`, editor state, `artifacts/`, `local-archive/`, `scripts/`, `public/demo-product-video.html`, archives, `.DS_Store`).
+- Commit `50b7a78` "Preview Hooked app updates for staging review" — 53 files changed, 6838 insertions(+), 841 deletions(-). Twilio webhook files included only because `routeTree.gen.ts` imports them (build-required).
+- No functional/code changes beyond the QA-pass fixes from the entry below.
+
+### Verification
+
+- `git status --porcelain` — confirmed only intended files staged; secrets/zips excluded.
+- `bun run build` — PASSED (exit 0).
+- Push: `origin/preview/staging-review` → https://github.com/michaelttvance/HOOKEDV2/tree/preview/staging-review
+- Vercel deployment `dpl_8sAJt8YnCNj9TRKXFhYjaKgzpxcZ` reached **READY**, `target: null` (preview, NOT production), region iad1, commit sha `50b7a78`.
+
+### Deployment
+
+- **Preview URL (stable branch alias):** https://hookedv-2-git-preview-staging-review-hookeddispatch-project.vercel.app
+- Immutable deployment URL: https://hookedv-2-5qblzlm0n-hookeddispatch-project.vercel.app
+- **Preview-only — not production.** `main` was not touched, merged, or deployed.
+
+### Risks / Follow-Up
+
+- Twilio voice/SMS webhook endpoints (`/api/public/twilio-*`) are live-but-dormant on this preview (build-required via routeTree). No traffic expected unless externally triggered.
+- Pages to review: `/`, `/demo`, `/dashboard`, `/driver`, `/owner`, `/founder`, `/admin`, `/apply`. App pages require an authenticated Supabase session in the preview environment.
+- Recommended next task: review preview, then decide whether to merge to `main` (production) in a dedicated, approved pass.
+
 ## 2026-06-11 — Pre-Deployment QA Pass
 
 ### Goal
