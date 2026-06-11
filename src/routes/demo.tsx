@@ -230,6 +230,7 @@ function DemoPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/apply"
+              onClick={() => track("start_trial_click", { location: "demo_nav" })}
               className="rounded-xl bg-[#FACC15] px-4 py-2 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.35)]"
             >
               <span className="hidden sm:inline">Start 30-day trial</span>
@@ -414,6 +415,7 @@ function DemoPage() {
                 </div>
                 <Link
                   to="/apply"
+                  onClick={() => track("start_trial_click", { location: "demo_video_sidebar" })}
                   className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#FACC15] hover:underline"
                 >
                   Start your free trial <ArrowRight className="h-4 w-4" />
@@ -547,6 +549,7 @@ function DemoPage() {
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   to="/apply"
+                  onClick={() => track("start_trial_click", { location: "demo_footer" })}
                   className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] sm:w-auto"
                 >
                   Start your free trial
