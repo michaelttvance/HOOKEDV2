@@ -88,6 +88,8 @@ export interface SmsMessage {
   sentAt: number | null;
 }
 
+export type CloseJobOutcome = "cancelled" | "goa";
+
 interface DispatchState {
   drivers: Driver[];
   jobs: Job[];
@@ -108,6 +110,7 @@ interface DispatchState {
   createJob: (input: NewJobInput) => Promise<Job | null>;
   addDriver: (input: NewDriverInput) => Promise<Driver | null>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void> | void;
+  closeJob: (jobId: string, outcome: CloseJobOutcome, reason?: string) => Promise<boolean> | boolean;
   setActiveDriverJob: (jobId: string) => void;
   invoiceHistory: (id: string) => void;
   sendChat: (text: string) => void;
@@ -172,12 +175,22 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
     queryKey: ["jobs", companyId],
     enabled,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("jobs")
+      const filtered = await (supabase.from("jobs") as any)
         .select("*")
+        .is("closed_at", null)
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map(mapJob);
+      if (!filtered.error) return (filtered.data ?? []).map(mapJob);
+
+      const message = String(filtered.error?.message ?? filtered.error ?? "");
+      if (/closed_at|schema cache|does not exist/i.test(message)) {
+        const fallback = await (supabase.from("jobs") as any)
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (fallback.error) throw fallback.error;
+        return (fallback.data ?? []).map(mapJob);
+      }
+
+      throw filtered.error;
     },
   });
 
@@ -303,12 +316,22 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
 
   // Auto-select first job once loaded
   useEffect(() => {
-    if (!selectedJobId && jobs.length) setSelectedJobId(jobs[0].id);
+    if (!jobs.length) {
+      if (selectedJobId) setSelectedJobId(null);
+      return;
+    }
+    if (!selectedJobId || !jobs.some((j) => j.id === selectedJobId)) {
+      setSelectedJobId(jobs[0].id);
+    }
   }, [jobs, selectedJobId]);
   useEffect(() => {
-    if (!activeDriverJobId) {
-      const mine = jobs.find((j) => j.assignedDriverId);
-      if (mine) setActiveDriverJobId(mine.id);
+    const mine = jobs.find((j) => j.assignedDriverId);
+    if (!mine) {
+      if (activeDriverJobId) setActiveDriverJobId(null);
+      return;
+    }
+    if (!activeDriverJobId || !jobs.some((j) => j.id === activeDriverJobId)) {
+      setActiveDriverJobId(mine.id);
     }
   }, [jobs, activeDriverJobId]);
 
@@ -521,6 +544,26 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
     [jobs, qc, companyId, smsTemplates, companyName, renderTemplate, enqueueSms, googleReviewUrl],
   );
 
+  const closeJob = useCallback(
+    async (jobId: string, outcome: CloseJobOutcome, reason?: string) => {
+      const bodyReason =
+        reason?.trim() || (outcome === "goa" ? "Marked GOA by dispatcher" : "Canceled by dispatcher");
+      const { error } = await supabase.rpc("close_job" as never, {
+        _job_id: jobId,
+        _outcome: outcome,
+        _reason: bodyReason,
+      } as never);
+      if (error) {
+        console.error("close_job error", error);
+        return false;
+      }
+      qc.invalidateQueries({ queryKey: ["jobs", companyId] });
+      qc.invalidateQueries({ queryKey: ["drivers", companyId] });
+      return true;
+    },
+    [qc, companyId],
+  );
+
   const updateSmsTemplates = useCallback(
     async (next: SmsTemplates) => {
       if (!companyId) return;
@@ -657,6 +700,7 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
       createJob,
       addDriver,
       updateJobStatus,
+      closeJob,
       setActiveDriverJob,
       invoiceHistory,
       sendChat,
@@ -685,6 +729,7 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
       createJob,
       addDriver,
       updateJobStatus,
+      closeJob,
       setActiveDriverJob,
       invoiceHistory,
       sendChat,
