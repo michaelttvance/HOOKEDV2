@@ -77,7 +77,14 @@ async function tableCount(table: string, filters?: (query: any) => any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let query = (supabaseAdmin as any).from(table).select("*", { count: "exact", head: true });
   if (filters) query = filters(query);
-  const { count, error } = (await query) as CountResult;
+  let { count, error } = (await query) as CountResult;
+  if (error && filters) {
+    const message = String(error instanceof Error ? error.message : error);
+    if (/closed_at|schema cache|does not exist/i.test(message)) {
+      const fallback = (supabaseAdmin as any).from(table).select("*", { count: "exact", head: true });
+      ({ count, error } = (await fallback) as CountResult);
+    }
+  }
   if (error) throw error;
   return count ?? 0;
 }
@@ -138,6 +145,7 @@ export const getCompanyOwnerMetrics = createServerFn({ method: "POST" })
           "id, customer_name, location, status, priority, job_type, estimated_price, assigned_driver_id, created_at",
         )
         .eq("company_id", companyId)
+        .is("closed_at", null)
         .order("created_at", { ascending: false })
         .limit(500),
       admin
@@ -321,7 +329,7 @@ export const getOwnerMetrics = createServerFn({ method: "POST" })
     ] = await Promise.all([
       tableCount("companies"),
       tableCount("profiles"),
-      tableCount("jobs"),
+      tableCount("jobs", (q) => q.is("closed_at", null)),
       tableCount("completed_jobs"),
       tableCount("applications"),
       tableCount("applications", (q) => q.gte("created_at", since30)),
@@ -346,6 +354,7 @@ export const getOwnerMetrics = createServerFn({ method: "POST" })
       admin
         .from("jobs")
         .select("id, company_id, status, priority, job_type, estimated_price, created_at")
+        .is("closed_at", null)
         .order("created_at", { ascending: false })
         .limit(500),
       admin
@@ -361,14 +370,27 @@ export const getOwnerMetrics = createServerFn({ method: "POST" })
         .limit(100),
     ]);
 
-    for (const result of [companiesRes, profilesRes, applicationsRes, activeJobsRes, completedJobsRes, campaignsRes]) {
+    for (const result of [companiesRes, profilesRes, applicationsRes, completedJobsRes, campaignsRes]) {
       if (result.error) throw result.error;
     }
 
     const companies = companiesRes.data ?? [];
     const profiles = profilesRes.data ?? [];
     const applications = applicationsRes.data ?? [];
-    const jobs = activeJobsRes.data ?? [];
+    let jobs = activeJobsRes.data ?? [];
+    if (activeJobsRes.error) {
+      const message = String(activeJobsRes.error instanceof Error ? activeJobsRes.error.message : activeJobsRes.error);
+      if (/closed_at|schema cache|does not exist/i.test(message)) {
+        const { data: fallbackJobs, error: fallbackError } = await admin
+          .from("jobs")
+          .select("id, company_id, status, priority, job_type, estimated_price, created_at")
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (!fallbackError) jobs = fallbackJobs ?? [];
+      } else {
+        throw activeJobsRes.error;
+      }
+    }
     const completed = completedJobsRes.data ?? [];
     let campaigns = campaignsRes.data ?? [];
     if (campaigns.length === 0) {
