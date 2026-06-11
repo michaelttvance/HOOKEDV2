@@ -26,6 +26,14 @@ dist-ssr
 # MCP server config (contains access tokens)
 .mcp.json
 
+# Local scratch files and generated demo assets
+.claude/
+artifacts/
+scripts/
+public/demo-product-video.html
+supabase/.branches/
+supabase/.temp/
+
 # Environment variables
 .env
 .env.*
