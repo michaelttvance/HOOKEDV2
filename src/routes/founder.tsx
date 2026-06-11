@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getFounderMetrics } from "@/lib/founder.functions";
+import { getProductAnalytics } from "@/lib/analytics.functions";
 import {
   createMarketingCampaign,
   setMarketingCampaignStatus,
@@ -386,20 +387,7 @@ function FounderDashboard({ data }: { data: FounderData }) {
             ))}
           </ul>
         </Panel>
-        <Panel title="Product analytics" action="PLACEHOLDER">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {analytics.metrics.map((m) => (
-              <div
-                key={m.label}
-                className="rounded-lg border border-dashed border-border bg-background p-3"
-              >
-                <div className="text-2xl font-bold text-muted-foreground">{m.value}</div>
-                <div className="mt-1 text-xs font-semibold text-muted-foreground">{m.label}</div>
-              </div>
-            ))}
-          </div>
-          <PlaceholderNote text={analytics.note} compact />
-        </Panel>
+        <ProductAnalyticsPanel fallback={analytics} />
       </section>
 
       {/* 6. Admin Tools Preview */}
@@ -444,6 +432,79 @@ function FounderDashboard({ data }: { data: FounderData }) {
       </section>
       <RecentApplicationsStrip apps={data.recentApplications} />
     </>
+  );
+}
+
+function ProductAnalyticsPanel({
+  fallback,
+}: {
+  fallback: { note: string; metrics: { label: string; value: string }[] };
+}) {
+  const analyticsFn = useServerFn(getProductAnalytics);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["founder-product-analytics", "v1"],
+    queryFn: () => analyticsFn(),
+    refetchInterval: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <Panel title="Product analytics" action="…">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading product analytics…
+        </div>
+      </Panel>
+    );
+  }
+
+  // On error, or before any events accumulate, fall back to the flagged
+  // placeholder shape so the panel always renders something stable.
+  if (error || !data || data.isPlaceholder) {
+    const note = data && data.isPlaceholder ? data.note : fallback.note;
+    return (
+      <Panel title="Product analytics" action="PLACEHOLDER">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {fallback.metrics.map((m) => (
+            <div
+              key={m.label}
+              className="rounded-lg border border-dashed border-border bg-background p-3"
+            >
+              <div className="text-2xl font-bold text-muted-foreground">{m.value}</div>
+              <div className="mt-1 text-xs font-semibold text-muted-foreground">{m.label}</div>
+            </div>
+          ))}
+        </div>
+        <PlaceholderNote text={note} compact />
+      </Panel>
+    );
+  }
+
+  const cards = [
+    { label: "Demo page views (30d)", value: fmt(data.funnel.demoPageViews30) },
+    { label: "Watch demo clicks (30d)", value: fmt(data.funnel.watchDemoClicks30) },
+    { label: "Start trial clicks (30d)", value: fmt(data.funnel.startTrialClicks30) },
+    { label: "Signups started (30d)", value: fmt(data.funnel.signupStarted30) },
+    { label: "Total events (7d)", value: fmt(data.totals.events7) },
+    { label: "Unique visitors (30d)", value: fmt(data.totals.uniqueVisitors30) },
+  ];
+
+  return (
+    <Panel title="Product analytics" action="LIVE">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map((c) => (
+          <div key={c.label} className="rounded-lg border border-border bg-background p-3">
+            <div className="text-2xl font-bold text-foreground">{c.value}</div>
+            <div className="mt-1 text-xs font-semibold text-muted-foreground">{c.label}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-[11px] leading-relaxed text-foreground">
+        <span className="font-bold uppercase tracking-wider">Live · </span>
+        Real marketing-funnel events from the product_events table (counts cover the
+        last 30 days; total events covers the last 7 days). Stripe revenue/MRR above
+        remains a separate placeholder until billing is instrumented.
+      </div>
+    </Panel>
   );
 }
 

@@ -108,8 +108,19 @@ function RootComponent() {
   }, [router, queryClient]);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (!("serviceWorker" in navigator)) return;
+    if (import.meta.env.PROD) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
+    } else {
+      // In dev, a service worker would cache-first the Vite module graph
+      // (including transient error responses), which breaks HMR and client
+      // hydration. Make sure no stale worker/cache is left controlling the page.
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => reg.unregister());
+      });
+      if ("caches" in window) {
+        caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+      }
     }
   }, []);
 

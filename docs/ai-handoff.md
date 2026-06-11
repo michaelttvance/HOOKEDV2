@@ -23,6 +23,134 @@ Update this file before every Claude/Codex/AI session stops.
 - Pages to review: `/`, `/demo`, `/dashboard`, `/driver`, `/owner`, `/founder`, `/admin`, `/apply` (app pages need an authed Supabase session).
 - Rollback: previous production was commit `168d0d0` (deployment `dpl_D5kKJb13PbjXZvmnynxATNFWdQgS`, marked rollback candidate).
 
+## Backend Review Session — Product Analytics Foundation (2026-06-11)
+
+Senior-backend/architect pass. Goal: first safe backend foundation = product
+analytics / event tracking. **NOT committed, NOT pushed. Migration NOT applied
+to the live DB.** No auth, Twilio, Stripe, or production data touched.
+
+### Files created
+- `supabase/migrations/20260611_product_events_analytics.sql` — non-destructive.
+  Creates ONLY `public.product_events` (id, event_name, company_id FK→companies
+  ON DELETE SET NULL, user_id no-FK, session_id, anonymous_id, route, source
+  CHECK('client'|'server'), metadata jsonb, created_at) + 4 indexes + RLS.
+  Grants: `service_role` ALL, `authenticated` SELECT (RLS-gated to
+  `is_super_admin(auth.uid())`), `anon` REVOKE. No INSERT/UPDATE/DELETE policy —
+  all writes flow through the service-role server fn. **Not yet applied.**
+- `src/lib/analytics.functions.ts` — server functions:
+  - `recordEvent` (PUBLIC `createServerFn` POST, zod-validated, no auth): never
+    trusts client user_id/company_id; fail-safe (swallows all errors incl.
+    missing-table 42P01); `metadata` capped at 4000 chars.
+  - `recordServerEvent(input)` — trusted server-side recorder for in-app events
+    (identity derived from server context, source='server'); fire-and-forget.
+  - `getProductAnalytics` — founder-gated (`requireSupabaseAuth` +
+    `is_super_admin`); returns live aggregates `{totals, funnel, byEvent30}` or a
+    clearly-flagged `ANALYTICS_PLACEHOLDER` when the table is missing/empty.
+  - Exports `PRODUCT_EVENTS` (canonical 13-event list), `ProductEvent`,
+    `ProductAnalytics`.
+- `src/lib/analytics.ts` — client `track(event, metadata?)` helper: client-only
+  guard, fully fail-safe (never throws/blocks/awaited), per-browser
+  `anonymousId` (localStorage) + per-tab `sessionId` (sessionStorage), no PII.
+
+### Files modified (event wiring only — existing href/Link behavior preserved)
+- `src/routes/demo.tsx` — `demo_page_view` on mount (useEffect); `watch_demo_click`
+  on hero "Watch the demo"; `start_trial_click` on hero "Start your free trial".
+- `src/routes/index.tsx` — `start_trial_click` on hero "Start free trial".
+- `src/routes/apply.tsx` — `signup_started` on mount (useEffect).
+
+### Verification
+- `bun run build` PASSED (exit 0, built in ~7.5s, no new errors).
+- App gracefully handles the table NOT existing: `recordEvent` swallows the
+  42P01 missing-table error; `getProductAnalytics` returns the placeholder.
+- Client tracking fails silently — cannot break the public site.
+
+### Migration APPLIED to live Supabase (2026-06-11)
+- `20260611_product_events_analytics.sql` was applied to the live DB via the
+  Supabase MCP (`apply_migration`, name `product_events_analytics`). Only this
+  migration was applied — no local history replay, no unrelated migrations.
+- Verified post-apply: table exists with all 10 columns; RLS enabled; 5 indexes
+  present (pkey + created_at, name+created, company, session); SELECT policy
+  "super admins read product events" present. A marked test row inserted then
+  deleted — table is currently empty (0 rows).
+
+### Live vs pending
+- LIVE NOW: the four public CTA events fire client-side AND persist to
+  `public.product_events`. `/founder` now renders these as live analytics.
+- PENDING: incrementally add `recordServerEvent` to in-app server fns.
+
+### Next recommended task (Sonnet/Codex)
+- Incrementally add `recordServerEvent` calls in
+  `job_created`/`invoice_created`/`ai_dispatch_used` server fns.
+- Still WAITS for explicit scope: Stripe/subscriptions schema, auth/role
+  hardening pass, company-scoped RLS audit, driver-app backend.
+
+## Analytics E2E Test + Founder Wiring Session (2026-06-11)
+
+End-to-end test of the analytics loop, plus wiring `/founder` to real data.
+**NOT committed, NOT pushed.** No Stripe/Twilio/auth/backend-feature changes.
+
+### Verified end-to-end (live Supabase)
+- All four public CTA events persist correctly: `demo_page_view` (/demo),
+  `watch_demo_click` (/demo, `{location:hero}`), `start_trial_click` (/,
+  `{location:home_hero}`), `signup_started` (/apply). Fields confirmed:
+  `event_name`, `route`, `source=client`, matching `session_id`+`anonymous_id`,
+  `metadata`. All test rows deleted afterward (`product_events` = 0 rows).
+- `start_trial_click` survives the SPA navigation to `/apply` (TanStack Router
+  client nav, not a hard reload, so the fire-and-forget POST isn't aborted).
+- `signup_started` double-fires in dev only (React StrictMode double-mount).
+
+### Root cause found + fixed (dev-only hydration failure)
+- Zero events were initially recorded because the app wasn't hydrating in dev.
+  Cause: the PWA service worker (`public/sw.js`, cache-first on all GETs) had
+  cached **503 responses for Vite's dev module graph**, so `@vite/client`/route
+  chunks failed to load and React never hydrated (no fibers → no effects/clicks).
+- Fix in `src/routes/__root.tsx`: register the SW only under
+  `import.meta.env.PROD`; in dev, unregister any existing SW and clear caches.
+  PWA behavior in production is unchanged.
+
+### Founder wiring (`src/routes/founder.tsx`)
+- New `ProductAnalyticsPanel` calls the existing `getProductAnalytics` server fn
+  (founder-gated; React Query, 60s refetch). Shows live cards — demo page views
+  (30d), watch-demo clicks (30d), start-trial clicks (30d), signups started
+  (30d), total events (7d), unique visitors (30d) — with a LIVE badge, and falls
+  back to the flagged placeholder on error/empty. Stripe/MRR revenue panel
+  untouched (still PLACEHOLDER). `getProductAnalytics` needed no changes.
+- `bun run build` PASSED (exit 0).
+
+### Note for next agent
+- A dev server may be running on :3000 (started this session). An unrelated
+  `Downloads/hookai` Vite instance was observed running and left alone.
+
+## Codex Analytics Review / Cleanup Pass (2026-06-11)
+
+Review-only pass after Claude's analytics backend/founder wiring.
+
+- Ran `git status --porcelain`: analytics-related app/docs files are modified/untracked; nothing is
+  staged.
+- Reviewed:
+  - `supabase/migrations/20260611_product_events_analytics.sql`
+  - `src/lib/analytics.functions.ts`
+  - `src/lib/analytics.ts`
+  - `src/routes/demo.tsx`
+  - `src/routes/index.tsx`
+  - `src/routes/apply.tsx`
+  - `src/routes/founder.tsx`
+  - `src/routes/__root.tsx`
+  - `docs/ai-handoff.md`
+  - `docs/change-log.md`
+- Confirmed no secret patterns in the analytics-related files reviewed.
+- Confirmed no staged `.env`, `.mcp.json`, zips, artifacts, or local-only files. Untracked local
+  demo/debug files remain present (`.claude/`, `artifacts/`, `public/demo-product-video.html`,
+  `scripts/`) and must stay out of any commit unless explicitly approved.
+- Confirmed service-worker registration remains production-only in `src/routes/__root.tsx`; dev
+  unregisters stale service workers and clears caches.
+- Confirmed `getProductAnalytics` returns the placeholder when `product_events` is missing,
+  errors, or has zero rows.
+- Confirmed client `track()` is browser-only, fire-and-forget, and swallows failures so analytics
+  cannot break public pages.
+- Verification: `PATH="$HOME/.bun/bin:$PATH" bun run build` PASSED.
+- No app code changes were made in this review pass.
+
 ## Last Completed Work
 
 - Created `docs/product-brief.md`.

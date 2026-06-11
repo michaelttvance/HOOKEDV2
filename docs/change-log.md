@@ -26,6 +26,133 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-11 — Codex Analytics Review / Cleanup Pass
+
+### Goal
+
+- Review Claude's product analytics migration/client-event/founder-panel work without adding
+  features or touching Stripe, Twilio, auth, migrations, or production data.
+
+### Changed
+
+- No app code changed.
+- Updated `docs/ai-handoff.md` and this change log with the review result.
+
+### Verification
+
+- `git status --porcelain` — analytics-related files are modified/untracked; nothing is staged.
+- Reviewed analytics-related migration, server functions, client tracking helper, CTA event wiring,
+  founder analytics panel, service-worker production gate, and docs.
+- Secret-pattern scan over the reviewed analytics files returned no matches.
+- Confirmed no staged `.env`, `.mcp.json`, zips, artifacts, or local-only files.
+- Confirmed `src/routes/__root.tsx` registers the service worker only under `import.meta.env.PROD`;
+  dev unregisters stale workers and clears caches.
+- Confirmed `getProductAnalytics` returns a placeholder on missing table/query errors/empty rows.
+- Confirmed public client tracking is browser-only, fire-and-forget, and fail-silent.
+- `PATH="$HOME/.bun/bin:$PATH" bun run build` — PASSED.
+
+### Risks / Follow-Up
+
+- Untracked local/demo files remain in the working tree (`.claude/`, `artifacts/`,
+  `public/demo-product-video.html`, `scripts/`). They are not staged; do not include them in a
+  commit unless explicitly approved.
+- `recordEvent` still uses deprecated `createServerFn().inputValidator()` like many existing server
+  functions. Build passes; this is not blocking.
+- Safe to commit to a preview branch and safe to deploy preview if the commit is limited to the
+  reviewed analytics/app/docs files and excludes local/demo artifacts.
+
+## 2026-06-11 — Analytics Loop E2E Test + Founder Wiring
+
+### Goal
+- Test the product-analytics loop end-to-end (public CTA events → `product_events`)
+  and wire `/founder` to display real analytics totals.
+- Constraints honored: no commit/push, no Stripe, no Twilio, no auth-logic changes,
+  no new backend features. Migration already applied in a prior session.
+
+### Changed
+- `src/routes/__root.tsx` — service-worker registration is now gated to
+  `import.meta.env.PROD`. In dev it actively unregisters any existing SW and
+  clears caches. Reason: the PWA SW (`public/sw.js`) does cache-first on all
+  same-origin GETs and caches whatever it receives — including transient error
+  responses. A stale SW had cached **503s for Vite's dev module graph**
+  (`/@vite/client`'s `env.mjs`, route chunks), which silently broke client
+  hydration (no React fibers attached → no `useEffect`/`onClick` → `track()`
+  never ran → zero events). Curl got 200s; the browser hit the SW and got 503s.
+- `src/routes/founder.tsx` — replaced the static "Product analytics" placeholder
+  panel with a new `ProductAnalyticsPanel` that calls the existing
+  `getProductAnalytics` server fn (React Query, 60s refetch). Renders real cards
+  (demo page views 30d, watch-demo clicks 30d, start-trial clicks 30d, signups
+  started 30d, total events 7d, unique visitors 30d) with a LIVE badge when data
+  exists; falls back to the flagged placeholder on error/empty. Stripe/MRR
+  revenue panel left untouched (still PLACEHOLDER).
+- No change needed to `analytics.functions.ts` — `getProductAnalytics` already
+  computed every requested total.
+
+### Verification
+- Killed a stray duplicate dev server (an unrelated `Downloads/hookai` Vite was
+  left alone); cleared `node_modules/.vite`; restarted one clean `bun run dev`.
+- After unregistering the SW, exercised `/demo` (page view), Watch-demo click,
+  home-hero Start-free-trial click (SPA nav to `/apply`), and `/apply` mount.
+- Confirmed 4 event types landed in `product_events` with correct
+  `event_name`/`route`/`source=client`/matching `session_id`+`anonymous_id`/
+  `metadata` (`watch_demo_click`→`{location:hero}`, `start_trial_click`→
+  `{location:home_hero}`). `signup_started` inserted twice = React StrictMode dev
+  double-mount (single insert in prod).
+- Deleted all test rows (`anonymous_id = d80b42e9…`); `product_events` back to 0.
+- `bun run build` PASSED (exit 0, built in ~6.5s; `founder` chunk compiled).
+
+### Risks / Follow-Up
+- SW dev-gating changes runtime behavior: **no service worker in dev** (correct;
+  PWA still registers in prod). Re-verify offline/PWA behavior in a prod build if
+  that matters.
+- `signup_started` double-fire is dev-only (StrictMode). Not an issue in prod.
+- Recommended next task: let real CTA traffic accumulate, then confirm the
+  `/founder` LIVE panel renders; consider wiring server-side in-app events
+  (`recordServerEvent`) for `job_created`/`invoice_created`/etc.
+
+## 2026-06-11 — Backend Review: Product Analytics Foundation
+
+### Goal
+- Senior-backend/architect session. Move Hooked toward a real SaaS backend by
+  shipping the first safe foundation: product analytics / event tracking.
+- Constraints honored: no commit/push, migration NOT applied, Supabase MCP
+  read-only, no auth/Twilio/Stripe/production-data changes.
+
+### Changed
+- Created `supabase/migrations/20260611_product_events_analytics.sql`
+  (non-destructive: one new `public.product_events` table + indexes + RLS;
+  service-role write, super-admin SELECT, anon revoked). NOT applied.
+- Created `src/lib/analytics.functions.ts` — `recordEvent` (public, fail-safe,
+  no client identity), `recordServerEvent` (trusted server-side), and
+  founder-gated `getProductAnalytics` (live aggregates or placeholder). Exports
+  `PRODUCT_EVENTS`, `ProductEvent`, `ProductAnalytics`.
+- Created `src/lib/analytics.ts` — client `track()` helper (fail-safe,
+  client-only, anonymousId/sessionId, no PII).
+- Wired ONLY low-risk public CTA events (onClick/useEffect additions; existing
+  navigation preserved):
+  - `src/routes/demo.tsx`: `demo_page_view`, `watch_demo_click`, `start_trial_click`.
+  - `src/routes/index.tsx`: `start_trial_click` (hero).
+  - `src/routes/apply.tsx`: `signup_started`.
+- Docs: updated `docs/ai-handoff.md` (this session's section) and this log.
+
+### Verification
+- `bun run build` PASSED twice (exit 0, ~7s, no new errors).
+- Confirmed graceful degradation when `product_events` does not exist:
+  `recordEvent` swallows 42P01; `getProductAnalytics` returns the placeholder;
+  client `track()` fails silently. Public site cannot be broken by analytics.
+- MIGRATION APPLIED to live Supabase via MCP `apply_migration`
+  (name `product_events_analytics`) — only this migration, no local replay.
+  Post-apply checks: table + 10 columns present, RLS enabled, 5 indexes,
+  super-admin SELECT policy present. Inserted a marked test row then deleted it
+  (table now 0 rows). Did NOT commit or push.
+
+### Risks / Follow-Up
+- Migration is now applied, so client events persist to `public.product_events`.
+- Next: wire `/founder` to `getProductAnalytics` (replace placeholders), then add
+  `recordServerEvent` to in-app server fns (job/invoice/ai-dispatch).
+- Out of scope / still waiting on explicit approval: Stripe/subscriptions,
+  auth/role hardening, company-scoped RLS audit, driver-app backend.
+
 ## 2026-06-11 — Production Deployment
 
 ### Goal

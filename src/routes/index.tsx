@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { track } from "@/lib/analytics";
 import {
   Truck,
   Sparkles,
@@ -297,6 +298,7 @@ function MarketingPage() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 to="/apply"
+                onClick={() => track("start_trial_click", { location: "home_hero" })}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] active:scale-[0.98] sm:w-auto"
               >
                 Start free trial

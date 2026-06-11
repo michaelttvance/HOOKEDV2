@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Truck, Loader2, CheckCircle2 } from "lucide-react";
 import { submitApplication } from "@/lib/applications.functions";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 const applyHead = () => ({
@@ -67,6 +68,10 @@ function ApplyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    track("signup_started");
+  }, []);
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setF((p) => ({ ...p, [k]: v }));

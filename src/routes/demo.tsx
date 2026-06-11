@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { track } from "@/lib/analytics";
 import {
   ArrowRight,
   BarChart3,
@@ -50,6 +51,10 @@ export const Route = createFileRoute("/demo")({
 });
 
 function DemoPage() {
+  useEffect(() => {
+    track("demo_page_view");
+  }, []);
+
   const modules = [
     {
       id: "owner",
@@ -264,6 +269,7 @@ function DemoPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#video"
+                onClick={() => track("watch_demo_click", { location: "hero" })}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] sm:w-auto"
               >
                 <PlayCircle className="h-4 w-4" />
@@ -271,6 +277,7 @@ function DemoPage() {
               </a>
               <Link
                 to="/apply"
+                onClick={() => track("start_trial_click", { location: "demo_hero" })}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 sm:w-auto"
               >
                 Start your free trial
