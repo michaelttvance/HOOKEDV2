@@ -6,6 +6,8 @@ ALTER TABLE public.jobs
   ADD COLUMN IF NOT EXISTS closed_outcome text,
   ADD COLUMN IF NOT EXISTS closed_reason text;
 
+DROP FUNCTION IF EXISTS public.get_job_tracking(uuid, text);
+
 CREATE OR REPLACE FUNCTION public.get_job_tracking(_job_id uuid, _token text)
 RETURNS TABLE (
   status text,
