@@ -398,14 +398,14 @@ function DemoPage() {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">What the video should cover</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">What you'll see in this walkthrough</div>
                 <div className="mt-4 space-y-3">
                   {[
-                    "How an inbound call becomes a clean dispatch-ready job",
+                    "How an inbound call becomes a clean, dispatch-ready job",
                     "How dispatch sees the live queue, map, and driver readiness",
-                    "How drivers work the job without office back-and-forth",
-                    "How customers get tracking and text updates",
-                    "How the job closes into billing and operator visibility",
+                    "How drivers work the job without constant office back-and-forth",
+                    "How customers follow their tow with tracking and text updates",
+                    "How a completed job closes into billing and owner visibility",
                   ].map((item) => (
                     <div key={item} className="flex items-start gap-2 text-sm text-slate-300">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />
@@ -418,8 +418,13 @@ function DemoPage() {
                   onClick={() => track("start_trial_click", { location: "demo_video_sidebar" })}
                   className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#FACC15] hover:underline"
                 >
-                  Start your free trial <ArrowRight className="h-4 w-4" />
+                  Start your 30-day trial <ArrowRight className="h-4 w-4" />
                 </Link>
+                <p className="mt-5 border-t border-white/10 pt-4 text-[11px] leading-relaxed text-slate-500">
+                  This walkthrough is for demonstration and informational purposes only. It
+                  shows how Hooked works today; features and capabilities may change over time,
+                  and nothing here is a guarantee of specific future functionality or results.
+                </p>
               </div>
             </div>
           </div>

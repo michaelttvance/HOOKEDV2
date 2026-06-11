@@ -67,7 +67,12 @@ export const submitApplication = createServerFn({ method: "POST" })
       })
       .select("id, created_at")
       .single();
-    if (error) throw error;
+    if (error) {
+      // Log the real cause server-side, but never serialize raw DB/internal
+      // details back to the public applicant. The UI shows a friendly message.
+      console.error("submitApplication insert failed", error);
+      throw new Error("APPLICATION_SUBMIT_FAILED");
+    }
 
     // Fire emails (don't block response on failures)
     await Promise.allSettled([

@@ -26,6 +26,105 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-11 — Phase 1: Ready-To-Use V1 (Public Site Stabilization)
+
+Branch: `feature/ready-to-use-v1`. Scope strictly limited to public-facing pages,
+lead/demo capture trust, customer-facing legal messaging, safer `/apply` error UX,
+and analytics naming. **Not committed, not pushed.** No auth/RLS/migrations/Twilio/
+Stripe/billing/demo-video assets/repo structure touched.
+
+### Goal
+
+- Make the public site honest, trustworthy, and "ready to use" for real prospects:
+  remove AI hype and overpromises, add reassurance + onboarding + security + trial
+  sections, add customer-facing legal copy, fix the `/apply` flow and its analytics.
+
+### Changed (9 files, all within the approved Phase 1 allowlist)
+
+- `.gitignore` — added protections for `.claude/`, `artifacts/`, `scripts/`, and
+  `public/demo-product-video.html` (local-only / scratch material kept out of git).
+- `.env.example` — documented `PUBLIC_SITE_URL` with a placeholder value only.
+- `src/lib/analytics.functions.ts` — added two names to the `PRODUCT_EVENTS`
+  allowlist: `apply_page_view`, `demo_request_page_view`. No refactor, no behavior
+  change beyond allowing these events to persist.
+- `src/routes/index.tsx`:
+  - Removed AI hype: hero badge "AI-powered dispatch…" → "Dispatch software built
+    for tow operators"; meta title/description de-hyped; the "AI Dispatch Assistant"
+    feature card reframed as a "Dispatch Assistant" that *supports* the dispatcher's
+    judgment (dropped "a senior dispatcher who never clocks out").
+  - Removed overpromises: "Live in one business day" → "We'll help you get set up";
+    pricing bullets "Full access to every feature, no limits" / "AI dispatch
+    assistant included" replaced with concrete, honest capability bullets; FAQ
+    "start … the same day" softened to "it depends on your operation".
+  - Kept and surfaced the real feature set (intake, dispatch, driver coordination,
+    customer tracking, billing, release paperwork, impound, motor clubs, SLA alerts,
+    owner visibility).
+  - Added 4 new customer-facing sections: "Why towing businesses choose Hooked",
+    "What to expect during onboarding", "Security and data responsibility",
+    "30-day trial explained".
+  - Added concise legal copy (trial subject to terms; customers responsible for
+    their own legal/regulatory compliance; Hooked does not provide legal advice;
+    references Privacy Policy & Terms of Service as plain text — NOT linked, since
+    those pages do not exist yet).
+  - Renamed the "Early access operator" testimonial label → "Towing operations lead".
+- `src/routes/demo.tsx`:
+  - Replaced the producer-facing "What the video should cover" block with
+    customer-facing "What you'll see in this walkthrough" copy.
+  - Added an informational disclaimer (demonstration only; capabilities may evolve;
+    no guarantee of specific future functionality or results).
+  - "Start your free trial" sidebar CTA → "Start your 30-day trial".
+- `src/routes/apply.tsx`:
+  - All "early access" language → "Start your 30-day trial" / "request a
+    personalized demo". Page title/meta updated.
+  - Logo + back/top-right nav now return to `/` (home) instead of `/auth`; success
+    screen "Back to sign in"→`/auth` changed to "Back to home"→`/`.
+  - Added trust signals ("What happens after you submit", one-business-day response
+    expectation, no-obligation).
+  - Added legal copy (submitting = consent to contact; data per privacy practices;
+    no guarantee of acceptance; no contract created; trials subject to ToS).
+  - Friendly error UX: raw server/DB error messages are no longer shown — replaced
+    with "We couldn't process your request right now. Please try again, or contact
+    our team…".
+  - Analytics fix: `signup_started` no longer fires on page view. The page now fires
+    `apply_page_view` on mount, and `signup_started` only on a genuine submit attempt.
+  - `submitApplication` call shape and behavior left UNCHANGED.
+- `src/lib/applications.functions.ts`:
+  - `submitApplication` insert-error path no longer throws the raw Postgres error to
+    the client; it logs server-side and throws a generic `APPLICATION_SUBMIT_FAILED`.
+    Success behavior (insert → emails → `{ ok, id }`) is unchanged.
+
+### Verification
+
+- `bun run build` — PASSED (exit 0, "✓ built in 6.86s"), only pre-existing
+  non-blocking warnings. (`bun` used per founder approval instead of the prompt's
+  `npm`, to avoid generating a `package-lock.json`.)
+- Manual QA to perform in a preview/dev session:
+  - `/` renders; new sections (Why / Onboarding / Security / Trial) appear between
+    pricing and FAQ; footer legal line present; no AI-hype copy remains.
+  - `/apply` logo + nav go to `/`; submitting with a forced server error shows the
+    friendly message (not a raw error); `apply_page_view` fires on load and
+    `signup_started` only on submit (check `product_events`).
+  - `/demo` shows the walkthrough copy + disclaimer.
+- Lint NOT run this pass (repo `eslint .` has historically hung >10 min); re-run in
+  isolation if desired.
+
+### Risks / Follow-Up
+
+- The landing testimonials are still illustrative/fabricated (star ratings + quotes).
+  Recommend replacing with real, attributable testimonials or clearly labeling them
+  before a hard public launch — out of Phase 1 scope, flagged for the founder.
+- Privacy Policy and Terms of Service are referenced in copy but the pages do not
+  exist yet. Recommend adding real `/privacy` and `/terms` routes, then converting
+  the plain-text references into links (Phase 2+).
+- `PUBLIC_SITE_URL` is only documented in `.env.example`; set the real value in the
+  Vercel project env before relying on absolute links.
+- Stripe/Phase 2 work from earlier this session was stashed (Option A) to keep this
+  branch clean — see the handoff note. A future `git stash pop` on the Phase 2
+  branch may conflict on `.env.example` (both touch it); resolve by keeping both the
+  `PUBLIC_SITE_URL` and the Stripe placeholder lines.
+- Next recommended task: founder review of this branch in a preview deploy, then
+  commit Phase 1 before starting Phase 2 (`feature/dispatch-core-v1`).
+
 ## 2026-06-11 — Codex Analytics Review / Cleanup Pass
 
 ### Goal

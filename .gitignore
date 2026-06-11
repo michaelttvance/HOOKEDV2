@@ -26,6 +26,14 @@ dist-ssr
 # MCP server config (contains access tokens)
 .mcp.json
 
+# Claude agent workspace (local-only, may contain notes/keys)
+.claude/
+
+# Local-only scratch / build-source material (not part of the shipped app)
+artifacts/
+scripts/
+public/demo-product-video.html
+
 # Environment variables
 .env
 .env.*

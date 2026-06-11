@@ -8,8 +8,61 @@ Update this file before every Claude/Codex/AI session stops.
 - Main repo: `michaelttvance/HOOKEDV2`, branch `main`.
 - App: TanStack Start + Supabase + Tailwind + Vercel.
 - Phase 0 security/repo hygiene was completed earlier.
-- Current focus is Phase 3 founder/company-owner separation and launch readiness.
+- **Active branch: `feature/ready-to-use-v1`. Phase 1 (Ready-To-Use V1, public-site
+  stabilization) is DONE but NOT committed and NOT pushed** — awaiting founder review.
 - There is a dirty working tree with both reviewed and unreviewed changes. Do not revert user/other-agent work.
+
+## Active Session — Phase 1: Ready-To-Use V1 (2026-06-11)
+
+Public-site stabilization on `feature/ready-to-use-v1`. **Nothing committed/pushed.**
+No auth/RLS/migrations/Twilio/Stripe/billing/demo-video/repo-structure changes.
+
+### Changed files (9, all within the approved Phase 1 allowlist)
+
+- `.gitignore`, `.env.example`, `src/lib/analytics.functions.ts`,
+  `src/lib/applications.functions.ts`, `src/routes/index.tsx`, `src/routes/demo.tsx`,
+  `src/routes/apply.tsx`, `docs/change-log.md`, `docs/ai-handoff.md`.
+- See the `2026-06-11 — Phase 1` entry in `docs/change-log.md` for the full,
+  file-by-file breakdown of what changed (AI-hype removal, overpromise removal, 4 new
+  trust sections, customer-facing legal copy, `/apply` nav + trust + legal + friendly
+  error UX, analytics page-view fix, sanitized `submitApplication` error path).
+
+### What was deliberately NOT touched
+
+- Auth / `user_roles` / `has_role()` / `is_super_admin()` / RLS / any migration.
+- Twilio files, Stripe, `billing.functions.ts`, `billing.tsx`.
+- Demo/video assets, nested-repo/git structure, production, `main`.
+
+### Build / verification
+
+- `bun run build` PASSED (exit 0, ✓ built in 6.86s). Lint not run (repo eslint hangs).
+
+### Stripe / Phase 2 (stashed — Option A)
+
+- Earlier-this-session Stripe wiring (subscription migration file + applied columns,
+  `stripe.server.ts`, `stripe.functions.ts`, `api/public/stripe-webhook.ts`,
+  trial-expired Stripe CTAs, `.env.example` Stripe placeholders, `routeTree.gen.ts`,
+  `package.json`/`bun.lock`) was moved into a `git stash` to keep Phase 1 clean.
+  Recover it on `feature/dispatch-core-v1` via `git stash list` / `git stash pop`.
+  NOTE: the additive `stripe_*` columns were already applied to the live DB earlier
+  this session and are harmless/non-breaking; do not re-apply.
+
+### Known risks / follow-ups
+
+- Landing testimonials are still illustrative (fabricated). Replace or clearly label
+  before a hard public launch.
+- Privacy Policy / Terms of Service are referenced in copy but the pages don't exist
+  yet — referenced as plain text (not links). Build `/privacy` + `/terms`, then link.
+- Set real `PUBLIC_SITE_URL` in Vercel env.
+
+### Exact next recommended task
+
+- Founder reviews `feature/ready-to-use-v1` in a preview deploy; if approved, commit
+  Phase 1, then start Phase 2 on `feature/dispatch-core-v1`.
+
+## Earlier Project State (pre-Phase-1)
+
+- Current focus is Phase 3 founder/company-owner separation and launch readiness.
 
 ## Current Deployment (2026-06-11)
 

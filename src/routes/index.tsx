@@ -47,17 +47,17 @@ const COPYRIGHT_YEAR = 2026;
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hooked — AI Tow Dispatch & Towing Software" },
+      { title: "Hooked — Tow Dispatch & Towing Management Software" },
       {
         name: "description",
         content:
-          "Hooked is modern dispatch software for tow operators — AI-powered driver matching, live GPS tracking, motor club workflows, impound management, billing, and owner analytics in one platform.",
+          "Hooked is modern dispatch software for tow operators — call intake, driver coordination, live tracking, motor club workflows, impound management, billing, and owner reporting in one platform.",
       },
-      { property: "og:title", content: "Hooked — AI Tow Dispatch & Towing Software" },
+      { property: "og:title", content: "Hooked — Tow Dispatch & Towing Management Software" },
       {
         property: "og:description",
         content:
-          "Run your towing company on one modern platform: dispatch, driver app, billing, impound, and AI assistance.",
+          "Run your towing company on one modern platform: intake, dispatch, driver app, customer tracking, billing, and impound.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://hookaidashboard.com/" },
@@ -276,7 +276,7 @@ function MarketingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FACC15] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FACC15]" />
               </span>
-              AI-powered dispatch for tow operators
+              Dispatch software built for tow operators
             </div>
           </Reveal>
           <Reveal delay={80}>
@@ -314,7 +314,7 @@ function MarketingPage() {
           </Reveal>
           <Reveal delay={300}>
             <p className="mt-4 text-xs text-slate-500">
-              30-day free trial · No credit card required · Live in one business day
+              30-day free trial · No credit card required · We'll help you get set up
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -519,7 +519,7 @@ function MarketingPage() {
                 {
                   quote:
                     "We moved our dispatch team into Hooked and our assignment times dropped almost immediately. The AI suggestions actually save us time.",
-                  name: "Early access operator",
+                  name: "Towing operations lead",
                   role: "12-truck fleet · Midwest",
                 },
                 {
@@ -579,13 +579,13 @@ function MarketingPage() {
                 </p>
                 <ul className="mt-7 space-y-3 text-left text-sm text-slate-300">
                   {[
-                    "Full access to every feature, no limits",
-                    "Unlimited dispatchers & drivers",
-                    "AI dispatch assistant included",
+                    "Dispatch board with live queue and map",
                     "Driver mobile app",
+                    "Customer tracking and updates",
                     "Billing, impound & rotations",
                     "Motor club tracking",
-                    "No credit card required",
+                    "Owner reporting and visibility",
+                    "No credit card required to start",
                   ].map((f) => (
                     <li key={f} className="flex items-center gap-2.5">
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FACC15]/15">
@@ -607,6 +607,212 @@ function MarketingPage() {
           </Reveal>
         </section>
 
+        {/* Why operators choose Hooked */}
+        <section id="why" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <SectionEyebrow>Why towing businesses choose Hooked</SectionEyebrow>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Built around how real tow operations run
+              </h2>
+              <p className="mt-4 text-slate-400">
+                Hooked is designed with working tow companies — not generic field-service
+                software dressed up for towing. The goal is fewer dropped details on busy days
+                and a clearer picture for the people running the operation.
+              </p>
+            </div>
+          </Reveal>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: "One source of truth",
+                body: "Intake, dispatch, driver updates, customer tracking, and closeout stay connected instead of scattered across calls, texts, and paper.",
+              },
+              {
+                title: "Made for the road",
+                body: "Drivers get a focused mobile workflow for the job in front of them — status, navigation, photos, signatures, and tracking links.",
+              },
+              {
+                title: "Visibility for owners",
+                body: "Response times, bottlenecks, and revenue signals are visible without chasing dispatch for a verbal recap.",
+              },
+              {
+                title: "Covers the whole job",
+                body: "From the first call through billing, impound, rotations, and motor club work — the operation lives in one place.",
+              },
+              {
+                title: "Customer experience",
+                body: "Live tracking and timely updates help reduce 'where's my truck?' calls and keep customers informed.",
+              },
+              {
+                title: "A team that supports you",
+                body: "We help you get set up and stay reachable, so you're not left figuring out new software on your own.",
+              },
+            ].map((item) => (
+              <Reveal key={item.title}>
+                <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FACC15]/15 text-[#FACC15]">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* What to expect during onboarding */}
+        <section id="onboarding" className="border-y border-white/5 bg-white/[0.02]">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <Reveal>
+              <div className="mx-auto max-w-2xl text-center">
+                <SectionEyebrow>What to expect during onboarding</SectionEyebrow>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                  A practical path to getting your team live
+                </h2>
+                <p className="mt-4 text-slate-400">
+                  Every operation is different, so timelines vary. Here's the general path most
+                  teams follow — we'll adapt it to how your company actually works.
+                </p>
+              </div>
+            </Reveal>
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  step: "1",
+                  title: "Talk it through",
+                  body: "We learn how your office, drivers, and billing work today and where the friction is.",
+                },
+                {
+                  step: "2",
+                  title: "Set up your account",
+                  body: "We help configure your company, users, and the core dispatch workflow so it fits your operation.",
+                },
+                {
+                  step: "3",
+                  title: "Get drivers running",
+                  body: "Drivers start on the mobile workflow first, so live jobs and tracking come online early.",
+                },
+                {
+                  step: "4",
+                  title: "Layer in the rest",
+                  body: "Billing, impound, rotations, motor clubs, and reporting come in cleanly as your team gets comfortable.",
+                },
+              ].map((item) => (
+                <Reveal key={item.step}>
+                  <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FACC15] text-sm font-extrabold text-black">
+                      {item.step}
+                    </div>
+                    <h3 className="mt-4 text-base font-bold text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.body}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Security and data responsibility */}
+        <section id="security" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <SectionEyebrow>Security and data responsibility</SectionEyebrow>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                We take your operational data seriously
+              </h2>
+              <p className="mt-4 text-slate-400">
+                Your dispatch and customer information is core to your business, and we treat it
+                that way.
+              </p>
+            </div>
+          </Reveal>
+          <div className="mt-12 grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                icon: ShieldCheck,
+                title: "Access controls",
+                body: "Each company's data is kept separate, and users only see what their role is meant to see.",
+              },
+              {
+                icon: Building2,
+                title: "Your data stays yours",
+                body: "We don't sell your business or customer data. It's used to provide and improve the service you're paying for.",
+              },
+              {
+                icon: FileText,
+                title: "Shared responsibility",
+                body: "We secure the platform; you control who on your team has access and how it's used day to day.",
+              },
+            ].map((item) => (
+              <Reveal key={item.title}>
+                <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FACC15]/15 text-[#FACC15]">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal>
+            <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-slate-500">
+              Hooked helps you run your operation, but it does not provide legal, regulatory, or
+              compliance advice. You are responsible for complying with the laws, licensing, and
+              regulations that apply to your towing business and the jurisdictions you operate in.
+            </p>
+          </Reveal>
+        </section>
+
+        {/* 30-day trial explained */}
+        <section id="trial" className="border-y border-white/5 bg-white/[0.02]">
+          <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+            <Reveal>
+              <div className="mx-auto max-w-2xl text-center">
+                <SectionEyebrow>30-day trial explained</SectionEyebrow>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                  How the free trial works
+                </h2>
+              </div>
+            </Reveal>
+            <div className="mt-10 space-y-3">
+              {[
+                {
+                  title: "No credit card to start",
+                  body: "You can begin your 30-day trial without entering payment details up front.",
+                },
+                {
+                  title: "Nothing auto-charges",
+                  body: "When the trial ends, you aren't automatically billed. We reach out first with pricing shaped around your operation.",
+                },
+                {
+                  title: "You decide what's next",
+                  body: "If Hooked is a fit, we help you continue on a plan. If it isn't, there's no obligation to keep going.",
+                },
+              ].map((item) => (
+                <Reveal key={item.title}>
+                  <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#FACC15]" />
+                    <div>
+                      <div className="text-sm font-semibold text-white">{item.title}</div>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-400">{item.body}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal>
+              <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-relaxed text-slate-500">
+                Trial access is provided as-is and is subject to our Terms of Service. Features
+                and availability may change over time. Pricing after the trial depends on your
+                fleet size and workflow needs.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
         {/* FAQ */}
         <section id="faq" className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
@@ -618,7 +824,7 @@ function MarketingPage() {
             {[
               {
                 q: "How fast can my team start using Hooked?",
-                a: "Most teams can start on the core dispatch workflow the same day. We focus on drivers, dispatch, and live jobs first, then layer in billing, impound, rotations, and reporting cleanly.",
+                a: "It depends on your operation, but we help you get started quickly. We focus on drivers, dispatch, and live jobs first, then layer in billing, impound, rotations, and reporting cleanly.",
               },
               {
                 q: "What does Hooked replace in the office?",
@@ -702,6 +908,15 @@ function MarketingPage() {
             <Link to="/apply" className="hover:text-slate-300">Apply</Link>
             <Link to="/auth" className="hover:text-slate-300">Sign in</Link>
           </div>
+        </div>
+        <div className="mx-auto mt-6 max-w-6xl border-t border-white/5 pt-6">
+          <p className="text-center text-[11px] leading-relaxed text-slate-600">
+            Use of Hooked is subject to our Terms of Service, and information is handled in
+            accordance with our Privacy Policy. Hooked provides dispatch and operations
+            software; it does not provide legal, regulatory, or compliance advice. Customers
+            are responsible for complying with the laws and regulations that apply to their
+            towing business. Free trials are subject to the applicable terms.
+          </p>
         </div>
       </footer>
     </div>
@@ -1280,16 +1495,17 @@ function BentoFeatures() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FACC15]/20 text-[#FACC15]">
             <Sparkles className="h-6 w-6" />
           </div>
-          <h3 className="mt-5 text-xl font-bold text-white">AI Dispatch Assistant</h3>
+          <h3 className="mt-5 text-xl font-bold text-white">Dispatch Assistant</h3>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">
-            Auto-suggests the best driver for every job based on location and availability,
-            drafts customer text updates, and watches SLA timers so nothing slips through the
-            cracks. It's like adding a senior dispatcher who never clocks out.
+            An assistant that helps your dispatcher work faster — it can suggest a
+            closest-available driver, draft customer text updates for review, and surface SLA
+            timers so jobs are less likely to slip. It supports your dispatcher's judgment
+            rather than replacing it.
           </p>
           <div className="mt-6 space-y-2">
             {[
-              "Closest-available driver matching",
-              "Auto-drafted customer ETA texts",
+              "Closest-available driver suggestions",
+              "Draft customer ETA texts for review",
               "SLA & stalled-job alerts",
             ].map((b) => (
               <div key={b} className="flex items-center gap-2 text-sm text-slate-300">

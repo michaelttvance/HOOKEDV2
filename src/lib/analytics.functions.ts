@@ -26,6 +26,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const PRODUCT_EVENTS = [
   // public / marketing funnel
   "demo_page_view",
+  "demo_request_page_view",
+  "apply_page_view",
   "watch_demo_click",
   "start_trial_click",
   "signup_started",

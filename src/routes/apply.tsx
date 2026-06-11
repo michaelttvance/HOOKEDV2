@@ -8,17 +8,17 @@ import { cn } from "@/lib/utils";
 
 const applyHead = () => ({
   meta: [
-    { title: "Apply for Hooked Access" },
+    { title: "Start your 30-day trial — Hooked" },
     {
       name: "description",
       content:
-        "Apply for early access to Hooked — the AI-powered dispatch platform for tow operators.",
+        "Start your 30-day Hooked trial or request a personalized demo. Tell us about your towing business and our team will follow up.",
     },
-    { property: "og:title", content: "Apply for Hooked Access" },
+    { property: "og:title", content: "Start your 30-day trial — Hooked" },
     {
       property: "og:description",
       content:
-        "We're onboarding a limited number of tow operators. Tell us about your business and we'll be in touch within 24 hours.",
+        "Tell us about your towing business and we'll help you get set up. Our team typically responds within one business day.",
     },
   ],
 });
@@ -70,7 +70,9 @@ function ApplyPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    track("signup_started");
+    // Page view only — do NOT fire signup_started here (that event should
+    // represent an actual signup intent, not a passive landing on this form).
+    track("apply_page_view");
   }, []);
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
@@ -117,6 +119,8 @@ function ApplyPage() {
       return;
     }
     setLoading(true);
+    // Fire signup_started on a genuine submit attempt (real intent), not on page view.
+    track("signup_started");
     try {
       await submit({
         data: {
@@ -135,8 +139,11 @@ function ApplyPage() {
         },
       });
       setDone(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } catch {
+      // Never surface raw server/internal errors to applicants.
+      setError(
+        "We couldn't process your request right now. Please try again, or contact our team at mike@hookaidashboard.com.",
+      );
     } finally {
       setLoading(false);
     }
@@ -151,17 +158,19 @@ function ApplyPage() {
             <CheckCircle2 className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            We've received your application
+            Thanks — we've received your request
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Expect to hear from us within 24 hours.
+            A member of our team will review your details and reach out, typically within one
+            business day. There's no obligation, and you're not committing to anything by
+            submitting this form.
           </p>
           <p className="mt-1 text-sm text-muted-foreground">— The Hooked Team</p>
           <Link
-            to="/auth"
+            to="/"
             className="mt-8 inline-flex items-center rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            Back to sign in
+            Back to home
           </Link>
         </main>
       </div>
@@ -174,12 +183,22 @@ function ApplyPage() {
       <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Apply for Hooked Access
+            Start your 30-day trial
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
-            We're onboarding a limited number of tow operators. Tell us about your business
-            and we'll be in touch within 24 hours.
+            Tell us about your towing operation and we'll help you get set up — or, if you'd
+            prefer, request a personalized demo first. Either way, our team typically responds
+            within one business day.
           </p>
+        </div>
+
+        <div className="mb-6 rounded-xl border border-border bg-surface/40 p-4 text-sm text-muted-foreground sm:p-5">
+          <p className="font-medium text-foreground">What happens after you submit</p>
+          <ul className="mt-2 space-y-1.5">
+            <li>• A member of our team reviews your details and reaches out — usually within one business day.</li>
+            <li>• We'll answer your questions and, when you're ready, walk you through getting started.</li>
+            <li>• There's no obligation. Submitting this form doesn't commit you to a contract or purchase.</li>
+          </ul>
         </div>
 
         <form
@@ -335,10 +354,16 @@ function ApplyPage() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Submit application
+            Submit request
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            We'll review your application and reply within 24 hours.
+            We'll review your details and follow up, typically within one business day.
+          </p>
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+            By submitting this form you consent to be contacted by Hooked about your request.
+            Your information is handled in line with our privacy practices and is not sold.
+            Submitting a request does not guarantee acceptance and does not create a contract
+            or obligation for either party. Trials are subject to our Terms of Service.
           </p>
         </form>
       </main>
@@ -376,7 +401,7 @@ function Header() {
   return (
     <header className="border-b border-border bg-surface/60 px-4 py-3 sm:px-6">
       <div className="mx-auto flex max-w-5xl items-center justify-between">
-        <Link to="/auth" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Truck className="h-4 w-4" />
           </div>
@@ -388,10 +413,10 @@ function Header() {
           </div>
         </Link>
         <Link
-          to="/auth"
+          to="/"
           className="text-xs text-muted-foreground hover:text-foreground"
         >
-          Sign in
+          Back to home
         </Link>
       </div>
     </header>
