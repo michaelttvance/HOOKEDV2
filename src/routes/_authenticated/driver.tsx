@@ -9,7 +9,6 @@ import {
   Bell,
   BellOff,
   Phone,
-  MessageSquare,
   Navigation,
   MapPin,
   Car,
@@ -18,6 +17,9 @@ import {
   Power,
   Coffee,
   Smartphone,
+  ClipboardCheck,
+  AlertTriangle,
+  Share2,
 } from "lucide-react";
 import { useDispatch } from "../../lib/dispatch-store";
 import { useAuth } from "../../lib/use-auth";
@@ -200,7 +202,7 @@ function DispatcherDriverRedirect() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Shared job screen (used by both real driver app & simulator)
+   Job screen for the driver app
    ───────────────────────────────────────────────────────────────── */
 
 function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
@@ -252,6 +254,13 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
 
       <DriverMiniMap job={job} />
 
+      <DriverQuickActions
+        cleanPhone={cleanPhone}
+        location={job.location}
+        trackingSmsHref={trackingSmsHref}
+        checklistDone={isChecklistDone}
+      />
+
       <PreJobChecklist
         jobId={job.id}
         done={isChecklistDone}
@@ -294,24 +303,6 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
 
       {job.status === "OnScene" && <SignaturePad job={job} />}
 
-      <NavigateMenu location={job.location} />
-
-      <a
-        href={`tel:${cleanPhone}`}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-4 text-base font-bold text-success-foreground active:scale-[0.98]"
-      >
-        <Phone className="h-5 w-5" /> Call customer
-      </a>
-
-      {job.publicToken && trackingSmsHref && (
-        <a
-          href={trackingSmsHref}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/50 bg-primary/10 py-4 text-base font-bold text-primary active:scale-[0.98]"
-        >
-          <MessageSquare className="h-5 w-5" /> Text tracking link
-        </a>
-      )}
-
       <div>
         <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Notes
@@ -334,6 +325,74 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
           <b className="text-foreground">Dispatch note:</b> {job.notes}
         </div>
       )}
+    </div>
+  );
+}
+
+function DriverQuickActions({
+  cleanPhone,
+  location,
+  trackingSmsHref,
+  checklistDone,
+}: {
+  cleanPhone: string;
+  location: string;
+  trackingSmsHref?: string;
+  checklistDone: boolean;
+}) {
+  const encoded = encodeURIComponent(location);
+  const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
+  const supportBody = encodeURIComponent(
+    `Driver needs help\n\nCurrent page: ${typeof window !== "undefined" ? window.location.href : ""}\nIssue:\n`,
+  );
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <a
+        href={cleanPhone ? `tel:${cleanPhone}` : undefined}
+        className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-border bg-surface px-2 py-3 text-center text-xs font-bold active:scale-[0.98]"
+      >
+        <Phone className="mb-1 h-4 w-4 text-success" />
+        Call customer
+      </a>
+      <a
+        href={mapsHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-border bg-surface px-2 py-3 text-center text-xs font-bold active:scale-[0.98]"
+      >
+        <Navigation className="mb-1 h-4 w-4 text-primary" />
+        Navigate
+      </a>
+      <a
+        href={trackingSmsHref}
+        className={cn(
+          "flex min-h-16 flex-col items-center justify-center rounded-xl border px-2 py-3 text-center text-xs font-bold active:scale-[0.98]",
+          trackingSmsHref
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "pointer-events-none border-border bg-surface text-muted-foreground opacity-60",
+        )}
+      >
+        <Share2 className="mb-1 h-4 w-4" />
+        Send tracker
+      </a>
+      <a
+        href={`mailto:support@hookaidashboard.com?subject=${encodeURIComponent("Driver app help")}&body=${supportBody}`}
+        className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-warning/30 bg-warning/10 px-2 py-3 text-center text-xs font-bold text-warning active:scale-[0.98]"
+      >
+        <AlertTriangle className="mb-1 h-4 w-4" />
+        Need help
+      </a>
+      <div className="col-span-2 rounded-xl border border-border bg-surface p-3">
+        <div className="flex items-center gap-2 text-xs font-bold">
+          <ClipboardCheck className={cn("h-4 w-4", checklistDone ? "text-success" : "text-warning")} />
+          {checklistDone ? "Pre-trip checklist complete" : "Complete checklist before rolling"}
+        </div>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+          The driver screen is ordered by the job flow: review details, navigate, send the tracking
+          link, update status, capture proof, and finish the tow.
+        </p>
+      </div>
     </div>
   );
 }
@@ -533,46 +592,6 @@ function Row({ icon: Icon, children }: { icon: React.ComponentType<{ className?:
     <div className="flex items-start gap-2 text-sm">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
-}
-
-function NavigateMenu({ location }: { location: string }) {
-  const [open, setOpen] = useState(false);
-  const encoded = encodeURIComponent(location);
-  const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
-  const waze = `https://waze.com/ul?q=${encoded}&navigate=yes`;
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-base font-bold text-primary-foreground active:scale-[0.98]"
-      >
-        <Navigation className="h-5 w-5" /> Navigate
-      </button>
-      {open && (
-        <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
-          <a
-            href={gmaps}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-3 text-sm font-semibold hover:bg-accent"
-          >
-            Google Maps
-          </a>
-          <a
-            href={waze}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-            className="block border-t border-border px-4 py-3 text-sm font-semibold hover:bg-accent"
-          >
-            Waze
-          </a>
-        </div>
-      )}
     </div>
   );
 }

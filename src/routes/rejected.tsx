@@ -2,13 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Truck, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const rejectedHead = () => ({
+  meta: [
+    { title: "Application status — Hooked" },
+    { name: "robots", content: "noindex" },
+  ],
+});
+
 export const Route = createFileRoute("/rejected")({
-  head: () => ({
-    meta: [
-      { title: "Application status — Hooked" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: rejectedHead,
   component: RejectedPage,
 });
 

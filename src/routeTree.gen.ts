@@ -15,7 +15,9 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RejectedRouteImport } from './routes/rejected'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as OwnerRouteImport } from './routes/owner'
+import { Route as FounderRouteImport } from './routes/founder'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -34,6 +36,9 @@ import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as StatementAccountIdMonthRouteImport } from './routes/statement.$accountId.$month'
+import { Route as ApiPublicTwilioVoiceStatusRouteImport } from './routes/api/public/twilio-voice-status'
+import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/twilio-voice'
+import { Route as ApiPublicTwilioSmsRouteImport } from './routes/api/public/twilio-sms'
 import { Route as ApiPublicInboundEmailRouteImport } from './routes/api/public/inbound-email'
 import { Route as ApiPublicApprovalActionRouteImport } from './routes/api/public/approval-action'
 
@@ -67,9 +72,19 @@ const OwnerRoute = OwnerRouteImport.update({
   path: '/owner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FounderRoute = FounderRouteImport.update({
+  id: '/founder',
+  path: '/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -162,6 +177,22 @@ const StatementAccountIdMonthRoute = StatementAccountIdMonthRouteImport.update({
   path: '/statement/$accountId/$month',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTwilioVoiceStatusRoute =
+  ApiPublicTwilioVoiceStatusRouteImport.update({
+    id: '/api/public/twilio-voice-status',
+    path: '/api/public/twilio-voice-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTwilioVoiceRoute = ApiPublicTwilioVoiceRouteImport.update({
+  id: '/api/public/twilio-voice',
+  path: '/api/public/twilio-voice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTwilioSmsRoute = ApiPublicTwilioSmsRouteImport.update({
+  id: '/api/public/twilio-sms',
+  path: '/api/public/twilio-sms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInboundEmailRoute = ApiPublicInboundEmailRouteImport.update({
   id: '/api/public/inbound-email',
   path: '/api/public/inbound-email',
@@ -179,7 +210,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
@@ -199,6 +232,9 @@ export interface FileRoutesByFullPath {
   '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
+  '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
+  '/api/public/twilio-voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/twilio-voice-status': typeof ApiPublicTwilioVoiceStatusRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
 }
 export interface FileRoutesByTo {
@@ -207,7 +243,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
@@ -227,6 +265,9 @@ export interface FileRoutesByTo {
   '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
+  '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
+  '/api/public/twilio-voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/twilio-voice-status': typeof ApiPublicTwilioVoiceStatusRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
 }
 export interface FileRoutesById {
@@ -237,7 +278,9 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
   '/rejected': typeof RejectedRoute
@@ -257,6 +300,9 @@ export interface FileRoutesById {
   '/track/$jobId': typeof TrackJobIdRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
+  '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
+  '/api/public/twilio-voice': typeof ApiPublicTwilioVoiceRoute
+  '/api/public/twilio-voice-status': typeof ApiPublicTwilioVoiceStatusRoute
   '/statement/$accountId/$month': typeof StatementAccountIdMonthRoute
 }
 export interface FileRouteTypes {
@@ -267,7 +313,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/demo'
     | '/forgot-password'
+    | '/founder'
     | '/owner'
     | '/pending'
     | '/rejected'
@@ -287,6 +335,9 @@ export interface FileRouteTypes {
     | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
+    | '/api/public/twilio-sms'
+    | '/api/public/twilio-voice'
+    | '/api/public/twilio-voice-status'
     | '/statement/$accountId/$month'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -295,7 +346,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/demo'
     | '/forgot-password'
+    | '/founder'
     | '/owner'
     | '/pending'
     | '/rejected'
@@ -315,6 +368,9 @@ export interface FileRouteTypes {
     | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
+    | '/api/public/twilio-sms'
+    | '/api/public/twilio-voice'
+    | '/api/public/twilio-voice-status'
     | '/statement/$accountId/$month'
   id:
     | '__root__'
@@ -324,7 +380,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/demo'
     | '/forgot-password'
+    | '/founder'
     | '/owner'
     | '/pending'
     | '/rejected'
@@ -344,6 +402,9 @@ export interface FileRouteTypes {
     | '/track/$jobId'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
+    | '/api/public/twilio-sms'
+    | '/api/public/twilio-voice'
+    | '/api/public/twilio-voice-status'
     | '/statement/$accountId/$month'
   fileRoutesById: FileRoutesById
 }
@@ -354,7 +415,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
+  DemoRoute: typeof DemoRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  FounderRoute: typeof FounderRoute
   OwnerRoute: typeof OwnerRoute
   PendingRoute: typeof PendingRoute
   RejectedRoute: typeof RejectedRoute
@@ -365,6 +428,9 @@ export interface RootRouteChildren {
   TrackJobIdRoute: typeof TrackJobIdRoute
   ApiPublicApprovalActionRoute: typeof ApiPublicApprovalActionRoute
   ApiPublicInboundEmailRoute: typeof ApiPublicInboundEmailRoute
+  ApiPublicTwilioSmsRoute: typeof ApiPublicTwilioSmsRoute
+  ApiPublicTwilioVoiceRoute: typeof ApiPublicTwilioVoiceRoute
+  ApiPublicTwilioVoiceStatusRoute: typeof ApiPublicTwilioVoiceStatusRoute
   StatementAccountIdMonthRoute: typeof StatementAccountIdMonthRoute
 }
 
@@ -412,11 +478,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/founder': {
+      id: '/founder'
+      path: '/founder'
+      fullPath: '/founder'
+      preLoaderRoute: typeof FounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forgot-password': {
       id: '/forgot-password'
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -545,6 +625,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatementAccountIdMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/twilio-voice-status': {
+      id: '/api/public/twilio-voice-status'
+      path: '/api/public/twilio-voice-status'
+      fullPath: '/api/public/twilio-voice-status'
+      preLoaderRoute: typeof ApiPublicTwilioVoiceStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/twilio-voice': {
+      id: '/api/public/twilio-voice'
+      path: '/api/public/twilio-voice'
+      fullPath: '/api/public/twilio-voice'
+      preLoaderRoute: typeof ApiPublicTwilioVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/twilio-sms': {
+      id: '/api/public/twilio-sms'
+      path: '/api/public/twilio-sms'
+      fullPath: '/api/public/twilio-sms'
+      preLoaderRoute: typeof ApiPublicTwilioSmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/inbound-email': {
       id: '/api/public/inbound-email'
       path: '/api/public/inbound-email'
@@ -596,7 +697,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
+  DemoRoute: DemoRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  FounderRoute: FounderRoute,
   OwnerRoute: OwnerRoute,
   PendingRoute: PendingRoute,
   RejectedRoute: RejectedRoute,
@@ -607,6 +710,9 @@ const rootRouteChildren: RootRouteChildren = {
   TrackJobIdRoute: TrackJobIdRoute,
   ApiPublicApprovalActionRoute: ApiPublicApprovalActionRoute,
   ApiPublicInboundEmailRoute: ApiPublicInboundEmailRoute,
+  ApiPublicTwilioSmsRoute: ApiPublicTwilioSmsRoute,
+  ApiPublicTwilioVoiceRoute: ApiPublicTwilioVoiceRoute,
+  ApiPublicTwilioVoiceStatusRoute: ApiPublicTwilioVoiceStatusRoute,
   StatementAccountIdMonthRoute: StatementAccountIdMonthRoute,
 }
 export const routeTree = rootRouteImport

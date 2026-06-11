@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Wand2,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { useDispatch } from "../../lib/dispatch-store";
 import type { Driver, Job, JobType, JobPriority, JobStatus } from "../../lib/seed-data";
@@ -25,6 +26,7 @@ import { parseSmartNotes } from "../../lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "../../lib/utils";
 import { VinLookup } from "../../components/vin-lookup";
+import { OnboardingChecklist } from "../../components/onboarding-checklist";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -54,6 +56,10 @@ function DispatchBoard() {
   const stalled = jobs.filter(
     (j) => j.status === "Unassigned" && Date.now() - j.receivedAt > 5 * 60_000,
   );
+  const urgentCount = jobs.filter((j) => j.priority === "Urgent").length;
+  const availableDrivers = drivers.filter((d) => d.status === "Available").length;
+  const assignedCount = jobs.filter((j) => j.status !== "Unassigned").length;
+  const onSceneCount = jobs.filter((j) => j.status === "OnScene").length;
 
   const suggestion = selectedJob ? bestDriverFor(selectedJob.id) : null;
 
@@ -81,6 +87,52 @@ function DispatchBoard() {
         </div>
       )}
 
+      <OnboardingChecklist onNewJob={() => setNewJobOpen(true)} />
+
+      <section className="border-b border-border bg-surface/60 px-4 py-4 sm:px-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Dispatch command</div>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight">Keep calls moving without losing the details</h1>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Work the queue, watch driver readiness, and clear anything that could slow down response time.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <InlineStatusChip label="Assigned" value={assignedCount} tone="default" />
+            <InlineStatusChip label="On scene" value={onSceneCount} tone="warning" />
+            <InlineStatusChip label="Needs attention" value={stalled.length} tone={stalled.length > 0 ? "urgent" : "default"} />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-px border-b border-border bg-border md:grid-cols-4">
+        <SnapshotCard
+          label="Active jobs"
+          value={String(jobs.length)}
+          tone="default"
+          detail={`${assignedCount} already moving`}
+        />
+        <SnapshotCard
+          label="Available drivers"
+          value={String(availableDrivers)}
+          tone="success"
+          detail={`${drivers.length} on the board`}
+        />
+        <SnapshotCard
+          label="Urgent calls"
+          value={String(urgentCount)}
+          tone={urgentCount > 0 ? "warning" : "default"}
+          detail={urgentCount > 0 ? "Needs fast response" : "No red-flag calls"}
+        />
+        <SnapshotCard
+          label="Stalled jobs"
+          value={String(stalled.length)}
+          tone={stalled.length > 0 ? "urgent" : "default"}
+          detail={stalled.length > 0 ? "Unassigned for 5+ min" : "Queue under control"}
+        />
+      </section>
+
       {/* Mobile tab switcher */}
       <div className="flex shrink-0 border-b border-border bg-surface md:hidden">
         {([
@@ -106,8 +158,9 @@ function DispatchBoard() {
         <section className={cn("min-h-0 flex-col bg-background md:flex", mobileTab === "queue" ? "flex" : "hidden")}>
           <header className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Queue</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Dispatch queue</div>
               <div className="text-sm font-semibold">{jobs.length} active jobs</div>
+              <div className="text-[11px] text-muted-foreground">Incoming calls, active tows, and jobs waiting on assignment</div>
             </div>
             <button
               onClick={() => setNewJobOpen(true)}
@@ -139,7 +192,8 @@ function DispatchBoard() {
           <header className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Live map</div>
-              <div className="text-sm font-semibold">Bay Area · {drivers.length} drivers</div>
+              <div className="text-sm font-semibold">Fleet position and customer ETAs</div>
+              <div className="text-[11px] text-muted-foreground">Bay Area view with live driver availability and urgent calls</div>
             </div>
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <LegendDot color="success" label="Available" />
@@ -183,10 +237,11 @@ function DispatchBoard() {
         {/* Drivers */}
         <section className={cn("min-h-0 flex-col bg-background lg:flex", mobileTab === "drivers" ? "flex md:hidden lg:flex" : "hidden")}>
           <header className="border-b border-border px-4 py-3">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Drivers</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Driver readiness</div>
             <div className="text-sm font-semibold">
               {drivers.filter((d) => d.status === "Available").length} available
             </div>
+            <div className="text-[11px] text-muted-foreground">Who can take the next call right now</div>
           </header>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
             {drivers.map((d) => (
@@ -205,6 +260,58 @@ function DispatchBoard() {
 
       {newJobOpen && <NewJobModal onClose={() => setNewJobOpen(false)} />}
       {detailJob && <JobDetailModal job={detailJob} onClose={() => openJobDetail(null)} />}
+    </div>
+  );
+}
+
+function InlineStatusChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "default" | "warning" | "urgent";
+}) {
+  const toneClass =
+    tone === "warning"
+      ? "border-warning/20 bg-warning/10 text-warning"
+      : tone === "urgent"
+        ? "border-urgent/20 bg-urgent/10 text-urgent"
+        : "border-border bg-background/70 text-foreground";
+
+  return (
+    <div className={cn("rounded-full border px-3 py-1.5 text-xs font-medium", toneClass)}>
+      {label}: <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+function SnapshotCard({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "default" | "success" | "warning" | "urgent";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-success"
+      : tone === "warning"
+        ? "text-warning"
+        : tone === "urgent"
+          ? "text-urgent"
+          : "text-foreground";
+
+  return (
+    <div className="bg-surface px-4 py-3">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 text-2xl font-semibold tracking-tight", toneClass)}>{value}</div>
+      <div className="text-[11px] text-muted-foreground">{detail}</div>
     </div>
   );
 }
@@ -358,7 +465,7 @@ const JOB_TYPES: JobType[] = ["Tow", "Lockout", "Jumpstart", "Tire", "Winch"];
 const PRIORITIES: JobPriority[] = ["Low", "Standard", "Urgent"];
 
 function NewJobModal({ onClose }: { onClose: () => void }) {
-  const { createJob, drivers, assignJob } = useDispatch();
+  const { createJob, drivers, assignJob, pricing } = useDispatch();
   const parseFn = useServerFn(parseSmartNotes);
   const [type, setType] = useState<JobType>("Tow");
   const [priority, setPriority] = useState<JobPriority>("Standard");
@@ -366,6 +473,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
     caller: "",
     phone: "",
     location: "",
+    dropoff: "",
     vin: "",
     year: "",
     make: "",
@@ -375,9 +483,17 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
   const [smartText, setSmartText] = useState("");
   const [parsing, setParsing] = useState(false);
   const [parseErr, setParseErr] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<{
+    summary: string;
+    action: string;
+    missing: string[];
+  } | null>(null);
   const [assignPickerJob, setAssignPickerJob] = useState<{ id: string } | null>(null);
 
   const preset = JOB_PRESETS[type];
+  // Estimate comes from the company's own pricing settings (base service rate),
+  // clearly labeled as a starting estimate — never an AI-guessed final price.
+  const estBase = pricing?.base?.[type] ?? preset.price;
 
   async function runParse() {
     if (!smartText.trim()) return;
@@ -390,18 +506,25 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
         return;
       }
       const p = res.parsed;
+      const driverNotes = [p.issue, p.driverNotes, p.cleanedNotes].filter(Boolean).join(" · ");
       setForm((f) => ({
         ...f,
         caller: p.caller ?? f.caller,
         phone: p.phone ?? f.phone,
         location: p.location ?? f.location,
+        dropoff: p.dropoffLocation ?? f.dropoff,
         year: p.vehicleYear ? String(p.vehicleYear) : f.year,
         make: p.vehicleMake ?? f.make,
         model: p.vehicleModel ?? f.model,
-        notes: p.cleanedNotes || f.notes,
+        notes: driverNotes || f.notes,
       }));
       if (p.serviceType) setType(p.serviceType);
       if (p.priority) setPriority(p.priority);
+      setAiResult({
+        summary: p.dispatchSummary || "",
+        action: p.recommendedAction || "",
+        missing: p.missingInfo ?? [],
+      });
     } catch (e: any) {
       setParseErr(e?.message || "Parse failed");
     } finally {
@@ -412,12 +535,15 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
   async function save(autoAssign: boolean) {
     if (!form.caller || !form.location) return;
     const vehicle = [form.year, form.make, form.model].filter(Boolean).join(" ");
+    const notes = [form.dropoff ? `Drop-off: ${form.dropoff}` : "", form.notes]
+      .filter(Boolean)
+      .join(" — ");
     const job = await createJob({
       caller: form.caller,
       phone: form.phone,
       location: form.location,
       vehicle,
-      notes: form.notes,
+      notes,
       type,
       priority,
     });
@@ -483,6 +609,37 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
               {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               Parse with AI
             </button>
+
+            {aiResult && (
+              <div className="mt-3 space-y-2 border-t border-primary/20 pt-3">
+                {aiResult.summary && (
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Dispatch-ready summary
+                    </div>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{aiResult.summary}</p>
+                  </div>
+                )}
+                {aiResult.action && (
+                  <div className="flex items-start gap-1.5 text-xs text-primary">
+                    <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><span className="font-semibold">Next:</span> {aiResult.action}</span>
+                  </div>
+                )}
+                {aiResult.missing.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-warning">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Missing:
+                    </span>
+                    {aiResult.missing.map((m) => (
+                      <span key={m} className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[11px] text-warning">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -493,8 +650,11 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
               <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={cn(inputCls, "text-base")} placeholder="(555) 123-4567" />
             </Field>
           </div>
-          <Field label="Location">
+          <Field label="Pickup location">
             <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className={cn(inputCls, "text-base")} placeholder="I-280 N, mile 42" />
+          </Field>
+          <Field label="Drop-off location (tows)">
+            <input value={form.dropoff} onChange={(e) => setForm({ ...form, dropoff: e.target.value })} className={cn(inputCls, "text-base")} placeholder="Toyota of San Francisco" />
           </Field>
           <Field label="VIN (optional — auto-fills vehicle)">
             <VinLookup
@@ -559,12 +719,15 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
           <div className="rounded-md border border-border bg-background p-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Estimated price</span>
-              <span className="font-mono text-sm font-semibold text-primary">${preset.price}</span>
+              <span className="font-mono text-sm font-semibold text-primary">~${estBase}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Estimated duration</span>
               <span className="font-mono text-sm font-semibold">{preset.durationMin} min</span>
             </div>
+            <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+              Starting estimate from your {type} base rate — final price adds mileage &amp; any fees.
+            </p>
           </div>
         </div>
 

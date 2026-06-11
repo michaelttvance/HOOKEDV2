@@ -10,6 +10,17 @@ import { oauth } from "@/integrations/oauth";
 
 type AuthSearch = { redirect?: string; token?: string; email?: string; mode?: "signin" | "signup" };
 
+const authHead = () => ({
+  meta: [
+    { title: "Sign in — Hooked" },
+    {
+      name: "description",
+      content:
+        "Sign in to your Hooked dispatch account to manage your tow fleet, track drivers, and handle billing.",
+    },
+  ],
+});
+
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): AuthSearch => ({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
@@ -17,12 +28,7 @@ export const Route = createFileRoute("/auth")({
     email: typeof s.email === "string" ? s.email : undefined,
     mode: s.mode === "signup" || s.mode === "signin" ? s.mode : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Sign in — Hooked" },
-      { name: "description", content: "Sign in to your Hooked dispatch account to manage your tow fleet, track drivers, and handle billing." },
-    ],
-  }),
+  head: authHead,
   component: AuthPage,
 });
 

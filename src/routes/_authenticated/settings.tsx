@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { MessageSquare, Save, Link2, Check, Smartphone, ArrowLeft, DollarSign, RotateCcw, Pencil, Mail, Inbox } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Save, Link2, Check, Smartphone, ArrowLeft, DollarSign, RotateCcw, Pencil, Mail, Inbox, Sparkles, Trash2, Loader2, PhoneCall } from "lucide-react";
 import { useDispatch, type SmsTemplates, type PricingConfig, DEFAULT_PRICING } from "../../lib/dispatch-store";
 import { useAuth } from "../../lib/use-auth";
 import { supabase } from "../../integrations/supabase/client";
@@ -46,7 +46,9 @@ const FEE_LABELS: Record<keyof PricingConfig["fees"], string> = {
 
 function SettingsPage() {
   const { smsTemplates, updateSmsTemplates, pricing, updatePricing, companyName, googleReviewUrl, updateGoogleReviewUrl } = useDispatch();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+  const isFounder = FOUNDER_EMAILS.includes((user?.email ?? "").toLowerCase());
   const [draft, setDraft] = useState<SmsTemplates>(smsTemplates);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -55,6 +57,72 @@ function SettingsPage() {
   const [reviewUrlDraft, setReviewUrlDraft] = useState(googleReviewUrl);
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewSaved, setReviewSaved] = useState(false);
+  const [demoBusy, setDemoBusy] = useState<null | "load" | "clear">(null);
+  const [demoMsg, setDemoMsg] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  async function runDemo(action: "load" | "clear") {
+    setDemoBusy(action);
+    setDemoMsg(null);
+    try {
+      const fn = action === "load" ? "seed_demo_data" : "clear_demo_data";
+      // Call as a method on the client so `this` stays bound (don't extract supabase.rpc).
+      const client = supabase as unknown as {
+        rpc: (n: string) => Promise<{ error: { message?: string } | null }>;
+      };
+      const { error } = await client.rpc(fn);
+      if (error) throw new Error(error.message ?? "rpc failed");
+      // Refresh the live board queries so the change shows immediately
+      qc.invalidateQueries({ queryKey: ["drivers", profile.companyId] });
+      qc.invalidateQueries({ queryKey: ["jobs", profile.companyId] });
+      qc.invalidateQueries({ queryKey: ["completed_jobs", profile.companyId] });
+      setDemoMsg(action === "load" ? "Sample data loaded — open the dispatch board." : "Demo data cleared.");
+    } catch (err) {
+      setDemoMsg(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setDemoBusy(null);
+    }
+  }
+
+  // ── Missed-call recovery (telephony) ──
+  const [twilioNumber, setTwilioNumber] = useState("");
+  const [forwardPhone, setForwardPhone] = useState("");
+  const [telSaving, setTelSaving] = useState(false);
+  const [telSaved, setTelSaved] = useState(false);
+  const telephonyQ = useQuery({
+    queryKey: ["telephony", profile.companyId],
+    enabled: !!profile.companyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("companies")
+        .select("twilio_number, forward_phone" as never)
+        .eq("id", profile.companyId!)
+        .maybeSingle();
+      return (data as { twilio_number: string | null; forward_phone: string | null } | null) ?? null;
+    },
+  });
+  useEffect(() => {
+    if (telephonyQ.data) {
+      setTwilioNumber(telephonyQ.data.twilio_number ?? "");
+      setForwardPhone(telephonyQ.data.forward_phone ?? "");
+    }
+  }, [telephonyQ.data]);
+
+  async function saveTelephony() {
+    if (!profile.companyId) return;
+    setTelSaving(true);
+    setTelSaved(false);
+    await supabase
+      .from("companies")
+      .update({ twilio_number: twilioNumber.trim() || null, forward_phone: forwardPhone.trim() || null } as never)
+      .eq("id", profile.companyId);
+    qc.invalidateQueries({ queryKey: ["telephony", profile.companyId] });
+    setTelSaving(false);
+    setTelSaved(true);
+    setTimeout(() => setTelSaved(false), 2000);
+  }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://hookedv-2.vercel.app";
 
   const inboundCodeQ = useQuery({
     queryKey: ["inbound-email-code", profile.companyId],
@@ -302,6 +370,95 @@ function SettingsPage() {
             Each message is logged on the job's SMS history with delivery status.
           </p>
         </section>
+
+        {/* Missed-call recovery */}
+        <section className="rounded-lg border border-border bg-surface p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <PhoneCall className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Missed-call recovery</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Calls to your Hooked number ring your phone first. If you can't answer, the caller
+            instantly gets a text back and lands on your board as a lead — so you never lose a job.
+          </p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Your Hooked (Twilio) number
+              </span>
+              <input
+                value={twilioNumber}
+                onChange={(e) => setTwilioNumber(e.target.value)}
+                placeholder="+18165550199"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Ring my real phone first
+              </span>
+              <input
+                value={forwardPhone}
+                onChange={(e) => setForwardPhone(e.target.value)}
+                placeholder="+18165550107"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none"
+              />
+            </label>
+          </div>
+          <button
+            onClick={saveTelephony}
+            disabled={telSaving}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {telSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {telSaved ? "Saved!" : "Save numbers"}
+          </button>
+
+          <div className="mt-4 rounded-md border border-dashed border-border bg-background p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Paste these into your Twilio number's settings
+            </div>
+            <div className="mt-2 space-y-1.5 font-mono text-[11px]">
+              <div><span className="text-muted-foreground">Voice — “A call comes in” (POST):</span><br />{origin}/api/public/twilio-voice</div>
+              <div><span className="text-muted-foreground">Messaging — “A message comes in” (POST):</span><br />{origin}/api/public/twilio-sms</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Demo / sample data — founder-only tooling, hidden from real operators */}
+        {isFounder && (
+        <section className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <div className="mb-1 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Demo data</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Instantly fill your board with a sample fleet, a few live jobs, and 30 days of completed
+            jobs — great for trying things out or running a walkthrough. Everything loaded here is
+            tagged as demo and removed cleanly when you clear it. Your real jobs are never touched.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={() => runDemo("load")}
+              disabled={demoBusy !== null}
+              className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {demoBusy === "load" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {demoBusy === "load" ? "Loading…" : "Load sample data"}
+            </button>
+            <button
+              onClick={() => runDemo("clear")}
+              disabled={demoBusy !== null}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:border-urgent hover:text-urgent disabled:opacity-60"
+            >
+              {demoBusy === "clear" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {demoBusy === "clear" ? "Clearing…" : "Clear demo data"}
+            </button>
+          </div>
+          {demoMsg && <p className="mt-2 text-xs font-medium text-primary">{demoMsg}</p>}
+        </section>
+        )}
       </div>
     </div>
   );

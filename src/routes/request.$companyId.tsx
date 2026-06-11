@@ -4,18 +4,26 @@ import { Truck, MapPin, Loader2, CheckCircle2, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { JobType } from "../lib/seed-data";
 
+const requestHead = ({ params }: { params: { companyId: string } }) => ({
+  meta: [
+    { title: "Request Tow Service — Hooked" },
+    {
+      name: "description",
+      content: "Request roadside or tow service. A driver will be assigned shortly.",
+    },
+    { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
+    { property: "og:title", content: "Request Tow Service — Hooked" },
+    {
+      property: "og:description",
+      content: "Request roadside or tow service. A driver will be assigned shortly.",
+    },
+    { property: "og:url", content: `https://hookaidashboard.com/request/${params.companyId}` },
+  ],
+});
+
 export const Route = createFileRoute("/request/$companyId")({
   ssr: false,
-  head: ({ params }) => ({
-    meta: [
-      { title: "Request Tow Service — Hooked" },
-      { name: "description", content: "Request roadside or tow service. A driver will be assigned shortly." },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
-      { property: "og:title", content: "Request Tow Service — Hooked" },
-      { property: "og:description", content: "Request roadside or tow service. A driver will be assigned shortly." },
-      { property: "og:url", content: `https://hookaidashboard.com/request/${params.companyId}` },
-    ],
-  }),
+  head: requestHead,
   component: RequestPage,
 });
 

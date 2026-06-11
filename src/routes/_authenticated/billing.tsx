@@ -36,17 +36,19 @@ import {
 } from "@/lib/billing.functions";
 import { cn } from "@/lib/utils";
 
+const billingHead = () => ({
+  meta: [
+    { title: "Billing & Accounting — Hooked" },
+    {
+      name: "description",
+      content:
+        "Invoices, customer accounts, statements, QuickBooks export, and revenue reports.",
+    },
+  ],
+});
+
 export const Route = createFileRoute("/_authenticated/billing")({
-  head: () => ({
-    meta: [
-      { title: "Billing & Accounting — Hooked" },
-      {
-        name: "description",
-        content:
-          "Invoices, customer accounts, statements, QuickBooks export, and revenue reports.",
-      },
-    ],
-  }),
+  head: billingHead,
   component: BillingPage,
 });
 

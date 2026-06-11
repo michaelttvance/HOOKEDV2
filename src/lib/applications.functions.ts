@@ -5,8 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const TRUCK = ["1-2", "3-5", "6-10", "10+"] as const;
 const SOFTWARE = [
   "No",
-  "Yes — TowBook",
-  "Yes — Towbook",
+  "Yes — Dispatch software",
   "Yes — Other",
 ] as const;
 const HEARD = [

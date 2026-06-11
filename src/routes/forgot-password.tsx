@@ -4,13 +4,15 @@ import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
+const forgotPasswordHead = () => ({
+  meta: [
+    { title: "Reset password — Hooked" },
+    { name: "description", content: "Request a password reset for your Hooked account." },
+  ],
+});
+
 export const Route = createFileRoute("/forgot-password")({
-  head: () => ({
-    meta: [
-      { title: "Reset password — Hooked" },
-      { name: "description", content: "Request a password reset for your Hooked account." },
-    ],
-  }),
+  head: forgotPasswordHead,
   component: ForgotPasswordPage,
 });
 

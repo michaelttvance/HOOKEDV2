@@ -13,8 +13,10 @@ import {
   Check,
   PenLine,
 } from "lucide-react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Loader2, Copy } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useDispatch } from "../lib/dispatch-store";
+import { generateFollowUp, type FollowUpScenario } from "../lib/ai.functions";
 import { trackingUrl } from "../lib/media";
 import type { Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
@@ -34,7 +36,7 @@ function statusIndex(s: JobStatus): number {
 }
 
 export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
-  const { drivers, assignJob, bestDriverFor, updateJobStatus, invoiceHistory, history, smsByJob } =
+  const { drivers, assignJob, bestDriverFor, updateJobStatus, invoiceHistory, history, smsByJob, companyName, googleReviewUrl } =
     useDispatch();
   const driver = drivers.find((d) => d.id === job.assignedDriverId);
   const suggestion = job.status === "Unassigned" ? bestDriverFor(job.id) : null;
@@ -53,6 +55,57 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
       setTimeout(() => setLinkCopied(false), 1800);
     } catch {
       window.prompt("Copy this tracking link", url);
+    }
+  }
+
+  // ── AI follow-up drafting ──
+  const draftFn = useServerFn(generateFollowUp);
+  const [followScenario, setFollowScenario] = useState<FollowUpScenario | null>(null);
+  const [followText, setFollowText] = useState("");
+  const [followBusy, setFollowBusy] = useState(false);
+  const [followErr, setFollowErr] = useState<string | null>(null);
+  const [followCopied, setFollowCopied] = useState(false);
+  const dropoff = job.notes?.match(/Drop-?off:\s*([^—]+)/i)?.[1]?.trim() ?? null;
+
+  async function draft(scenario: FollowUpScenario) {
+    setFollowScenario(scenario);
+    setFollowBusy(true);
+    setFollowErr(null);
+    setFollowText("");
+    try {
+      const res = await draftFn({
+        data: {
+          scenario,
+          context: {
+            customerName: job.caller,
+            companyName,
+            serviceType: job.type,
+            vehicle: job.vehicle,
+            pickupLocation: job.location,
+            dropoffLocation: dropoff,
+            estimatedPrice: job.estPrice,
+            etaMinutes: driver?.etaMin ?? null,
+            reviewUrl: googleReviewUrl || null,
+            amountDue: job.estPrice,
+          },
+        },
+      });
+      if (res.ok) setFollowText(res.message);
+      else setFollowErr(res.error);
+    } catch (e) {
+      setFollowErr(e instanceof Error ? e.message : "Draft failed");
+    } finally {
+      setFollowBusy(false);
+    }
+  }
+
+  async function copyFollow() {
+    try {
+      await navigator.clipboard.writeText(followText);
+      setFollowCopied(true);
+      setTimeout(() => setFollowCopied(false), 1800);
+    } catch {
+      window.prompt("Copy message", followText);
     }
   }
 
@@ -330,6 +383,64 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </Section>
+
+            <Section title={
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> AI follow-up
+              </span>
+            }>
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { k: "quote_followup", label: "Quote follow-up" },
+                  { k: "eta_update", label: "ETA update" },
+                  { k: "payment_reminder", label: "Payment reminder" },
+                  { k: "impound_release", label: "Impound release" },
+                  { k: "review_request", label: "Review request" },
+                ] as { k: FollowUpScenario; label: string }[]).map((s) => (
+                  <button
+                    key={s.k}
+                    onClick={() => draft(s.k)}
+                    disabled={followBusy}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50",
+                      followScenario === s.k
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {followBusy && (
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Drafting…
+                </div>
+              )}
+              {followErr && <div className="mt-2 text-[11px] text-urgent">{followErr}</div>}
+
+              {followText && !followBusy && (
+                <div className="mt-2">
+                  <textarea
+                    rows={4}
+                    value={followText}
+                    onChange={(e) => setFollowText(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  />
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground">{followText.length} chars · edit before sending</span>
+                    <button
+                      onClick={copyFollow}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      {followCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {followCopied ? "Copied!" : "Copy message"}
+                    </button>
+                  </div>
                 </div>
               )}
             </Section>

@@ -88,7 +88,7 @@ function RotationsPage() {
               <Loader2 className="mx-auto h-4 w-4 animate-spin" />
             </div>
           ) : pds.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">No PDs yet. Add your first department.</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">No police departments yet. Add your first one.</div>
           ) : (
             <ul>
               {pds.map((pd, i) => (

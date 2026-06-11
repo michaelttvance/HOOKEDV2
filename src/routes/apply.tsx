@@ -5,23 +5,25 @@ import { Truck, Loader2, CheckCircle2 } from "lucide-react";
 import { submitApplication } from "@/lib/applications.functions";
 import { cn } from "@/lib/utils";
 
+const applyHead = () => ({
+  meta: [
+    { title: "Apply for Hooked Access" },
+    {
+      name: "description",
+      content:
+        "Apply for early access to Hooked — the AI-powered dispatch platform for tow operators.",
+    },
+    { property: "og:title", content: "Apply for Hooked Access" },
+    {
+      property: "og:description",
+      content:
+        "We're onboarding a limited number of tow operators. Tell us about your business and we'll be in touch within 24 hours.",
+    },
+  ],
+});
+
 export const Route = createFileRoute("/apply")({
-  head: () => ({
-    meta: [
-      { title: "Apply for Hooked Access" },
-      {
-        name: "description",
-        content:
-          "Apply for early access to Hooked — the AI-powered dispatch platform for tow operators.",
-      },
-      { property: "og:title", content: "Apply for Hooked Access" },
-      {
-        property: "og:description",
-        content:
-          "We're onboarding a limited number of tow operators. Tell us about your business and we'll be in touch within 24 hours.",
-      },
-    ],
-  }),
+  head: applyHead,
   component: ApplyPage,
 });
 
@@ -32,7 +34,7 @@ type FormState = {
   phone: string;
   cityState: string;
   truckCount: "1-2" | "3-5" | "6-10" | "10+" | "";
-  currentSoftware: "No" | "Yes — TowBook" | "Yes — Towbook" | "Yes — Other" | "";
+  currentSoftware: "No" | "Yes — Dispatch software" | "Yes — Other" | "";
   softwareComplaints: string;
   heardFrom:
     | "Facebook Group"
@@ -260,14 +262,13 @@ function ApplyPage() {
               >
                 <option value="">Select…</option>
                 <option>No</option>
-                <option>Yes — TowBook</option>
-                <option>Yes — Towbook</option>
+                <option>Yes — Dispatch software</option>
                 <option>Yes — Other</option>
               </select>
             </Field>
           </Row>
 
-          <Field label="If yes, what do you hate most about your current software?">
+          <Field label="If yes, what's your biggest frustration with your current software?">
             <textarea
               className={cn(inputCls, "min-h-[88px] resize-y")}
               value={f.softwareComplaints}

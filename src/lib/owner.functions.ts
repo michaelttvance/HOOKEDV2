@@ -49,8 +49,8 @@ const DEFAULT_CAMPAIGNS = [
     channel: "Google",
     status: "active",
     budget: 500,
-    goal: "Capture towing companies searching for TowBook alternatives and dispatch software.",
-    notes: "Use with Google Search keywords around towing dispatch, tow software, and impound management.",
+    goal: "Capture towing companies searching for smarter dispatch software.",
+    notes: "Use with Google Search keywords around towing dispatch, tow software, live tracking, and impound management.",
     target_url: "https://hookedv-2.vercel.app/apply",
   },
   {
@@ -81,6 +81,216 @@ async function tableCount(table: string, filters?: (query: any) => any) {
   if (error) throw error;
   return count ?? 0;
 }
+
+export const getCompanyOwnerMetrics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const { data: roleRows, error: roleError } = await admin
+      .from("user_roles")
+      .select("company_id, role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .limit(1);
+    if (roleError) throw roleError;
+
+    const companyId = roleRows?.[0]?.company_id as string | undefined;
+    if (!companyId) throw new Error("Forbidden");
+
+    const since30 = startOfDay(30);
+
+    const [
+      companyRes,
+      profilesRes,
+      rolesRes,
+      driversRes,
+      jobsRes,
+      completed30Res,
+      completedAllCount,
+    ] = await Promise.all([
+      admin
+        .from("companies")
+        .select("id, name, created_at, trial_ends_at")
+        .eq("id", companyId)
+        .single(),
+      admin
+        .from("profiles")
+        .select("id, email, full_name, status, created_at")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      admin
+        .from("user_roles")
+        .select("user_id, role, created_at")
+        .eq("company_id", companyId)
+        .limit(500),
+      admin
+        .from("drivers")
+        .select("id, name, truck_number, phone, status, current_job_id, eta_min, created_at")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      admin
+        .from("jobs")
+        .select(
+          "id, customer_name, location, status, priority, job_type, estimated_price, assigned_driver_id, created_at",
+        )
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      admin
+        .from("completed_jobs")
+        .select(
+          "id, customer_name, driver_name, job_type, completed_at, price, tax_amount, payment_status, response_minutes",
+        )
+        .eq("company_id", companyId)
+        .gte("completed_at", since30)
+        .order("completed_at", { ascending: false })
+        .limit(1000),
+      tableCount("completed_jobs", (q) => q.eq("company_id", companyId)),
+    ]);
+
+    for (const result of [companyRes, profilesRes, rolesRes, driversRes, jobsRes, completed30Res]) {
+      if (result.error) throw result.error;
+    }
+
+    const company = companyRes.data;
+    const profiles = profilesRes.data ?? [];
+    const roles = rolesRes.data ?? [];
+    const drivers = driversRes.data ?? [];
+    const jobs = jobsRes.data ?? [];
+    const completed30 = completed30Res.data ?? [];
+
+    const roleByUser = new Map<string, string>();
+    for (const role of roles) roleByUser.set(role.user_id, role.role);
+
+    const revenue30 = completed30.reduce(
+      (sum: number, row: any) => sum + Number(row.price ?? 0) + Number(row.tax_amount ?? 0),
+      0,
+    );
+    const paid30 = completed30
+      .filter((row: any) => row.payment_status === "paid")
+      .reduce(
+        (sum: number, row: any) => sum + Number(row.price ?? 0) + Number(row.tax_amount ?? 0),
+        0,
+      );
+    const avgResponse30 =
+      completed30.length > 0
+        ? Math.round(
+            completed30.reduce(
+              (sum: number, row: any) => sum + Number(row.response_minutes ?? 0),
+              0,
+            ) / completed30.length,
+          )
+        : 0;
+
+    const trialEndsAt = company?.trial_ends_at ? new Date(company.trial_ends_at) : null;
+    const trialDaysLeft = trialEndsAt
+      ? Math.ceil((trialEndsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+      : null;
+    const lastActive =
+      [jobs[0]?.created_at, completed30[0]?.completed_at, profiles[0]?.created_at]
+        .filter(Boolean)
+        .sort()
+        .at(-1) ?? null;
+
+    const insights = [
+      jobs.filter((j: any) => j.status === "unassigned").length > 0
+        ? {
+            tone: "urgent",
+            title: "Unassigned work needs attention",
+            detail: `${jobs.filter((j: any) => j.status === "unassigned").length} active job${
+              jobs.filter((j: any) => j.status === "unassigned").length === 1 ? "" : "s"
+            } still need a driver.`,
+          }
+        : {
+            tone: "success",
+            title: "Dispatch queue is covered",
+            detail: "No active jobs are currently sitting unassigned.",
+          },
+      avgResponse30 > 0
+        ? {
+            tone: avgResponse30 <= 25 ? "success" : "warning",
+            title: "Response-time trend",
+            detail: `Average completed-job response time is ${avgResponse30} minutes over the last 30 days.`,
+          }
+        : {
+            tone: "muted",
+            title: "Response data will appear after completions",
+            detail: "Complete jobs from the board to unlock response-time reporting.",
+          },
+      drivers.filter((d: any) => d.status === "available").length > 0
+        ? {
+            tone: "success",
+            title: "Fleet availability",
+            detail: `${drivers.filter((d: any) => d.status === "available").length} driver${
+              drivers.filter((d: any) => d.status === "available").length === 1 ? "" : "s"
+            } available right now.`,
+          }
+        : {
+            tone: "warning",
+            title: "No available drivers",
+            detail: "All drivers are busy or off. Review schedule coverage before more calls come in.",
+          },
+    ];
+
+    return {
+      generatedAt: new Date().toISOString(),
+      scope: {
+        companyId,
+        companyName: company?.name ?? "Your company",
+        createdAt: company?.created_at ?? null,
+        trialEndsAt: company?.trial_ends_at ?? null,
+        trialDaysLeft,
+        lastActive,
+      },
+      totals: {
+        activeJobs: jobs.length,
+        completedJobs30: completed30.length,
+        completedJobsAll: completedAllCount,
+        revenue30,
+        paid30,
+        unpaid30: revenue30 - paid30,
+        avgResponse30,
+        users: profiles.length,
+        owners: roles.filter((r: any) => r.role === "admin").length,
+        dispatchers: roles.filter((r: any) => r.role === "dispatcher").length,
+        driverUsers: roles.filter((r: any) => r.role === "driver").length,
+        drivers: drivers.length,
+        availableDrivers: drivers.filter((d: any) => d.status === "available").length,
+      },
+      breakdowns: {
+        jobStatus: countBy(jobs, "status"),
+        jobPriority: countBy(jobs, "priority"),
+        completedJobType30: countBy(completed30, "job_type"),
+        paymentStatus30: countBy(completed30, "payment_status"),
+        driverStatus: countBy(drivers, "status"),
+        teamRoles: countBy(roles, "role"),
+      },
+      team: profiles.map((profile: any) => ({
+        id: profile.id,
+        name: profile.full_name,
+        email: profile.email,
+        status: profile.status,
+        role: roleByUser.get(profile.id) ?? "dispatcher",
+        createdAt: profile.created_at,
+      })),
+      drivers: drivers.map((driver: any) => ({
+        id: driver.id,
+        name: driver.name,
+        truckNumber: driver.truck_number,
+        phone: driver.phone,
+        status: driver.status,
+        currentJobId: driver.current_job_id,
+        etaMin: driver.eta_min,
+      })),
+      recentJobs: jobs.slice(0, 10),
+      recentCompleted: completed30.slice(0, 10),
+      insights,
+    };
+  });
 
 export const getOwnerMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -10,9 +10,16 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     tailwindcss(),
-    TanStackRouterVite({ autoCodeSplitting: true }),
+    TanStackRouterVite({
+      autoCodeSplitting: true,
+      plugin: {
+        hmr: {
+          style: "webpack",
+        },
+      },
+    }),
     tanstackStart({ server: { entry: "server" } }),
     nitro({ config: { preset: "vercel" } }),
-    react(),
+    react({ fastRefresh: false }),
   ],
 });

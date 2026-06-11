@@ -2,14 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Truck, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const trialExpiredHead = () => ({
+  meta: [
+    { title: "Trial expired — Hooked" },
+    { name: "description", content: "Your Hooked free trial has ended." },
+    { name: "robots", content: "noindex" },
+  ],
+});
+
 export const Route = createFileRoute("/trial-expired")({
-  head: () => ({
-    meta: [
-      { title: "Trial expired — Hooked" },
-      { name: "description", content: "Your Hooked free trial has ended." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: trialExpiredHead,
   component: TrialExpiredPage,
 });
 

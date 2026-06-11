@@ -4,13 +4,15 @@ import { Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
+const resetPasswordHead = () => ({
+  meta: [
+    { title: "Set new password — Hooked" },
+    { name: "description", content: "Choose a new password for your Hooked account." },
+  ],
+});
+
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({
-    meta: [
-      { title: "Set new password — Hooked" },
-      { name: "description", content: "Choose a new password for your Hooked account." },
-    ],
-  }),
+  head: resetPasswordHead,
   component: ResetPasswordPage,
 });
 

@@ -5,6 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGoogleMaps, toLatLng, MAP_STYLE } from "../lib/maps";
 import { cn } from "../lib/utils";
 
+const trackHead = () => ({
+  meta: [
+    { title: "Track your tow — Hooked" },
+    { name: "robots", content: "noindex" },
+    { name: "description", content: "Live location and ETA for your tow truck." },
+  ],
+});
+
 interface TrackingData {
   status: "unassigned" | "assigned" | "en_route" | "on_scene" | "complete";
   job_type: string;
@@ -28,13 +36,7 @@ export const Route = createFileRoute("/track/$jobId")({
   validateSearch: (search: Record<string, unknown>) => ({
     t: typeof search.t === "string" ? search.t : "",
   }),
-  head: () => ({
-    meta: [
-      { title: "Track your tow — Hooked" },
-      { name: "robots", content: "noindex" },
-      { name: "description", content: "Live location and ETA for your tow truck." },
-    ],
-  }),
+  head: trackHead,
   component: TrackPage,
 });
 

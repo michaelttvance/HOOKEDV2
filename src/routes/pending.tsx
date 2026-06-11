@@ -2,14 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Truck, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const pendingHead = () => ({
+  meta: [
+    { title: "Account under review — Hooked" },
+    { name: "description", content: "Your Hooked account is under review." },
+    { name: "robots", content: "noindex" },
+  ],
+});
+
 export const Route = createFileRoute("/pending")({
-  head: () => ({
-    meta: [
-      { title: "Account under review — Hooked" },
-      { name: "description", content: "Your Hooked account is under review." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: pendingHead,
   component: PendingPage,
 });
 

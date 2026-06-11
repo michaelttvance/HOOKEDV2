@@ -5,20 +5,24 @@ import { Loader2, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStatement } from "@/lib/billing.functions";
 
+const statementHead = () => ({
+  meta: [
+    { title: "Statement — Hooked" },
+    { name: "robots", content: "noindex" },
+  ],
+});
+
+const statementBeforeLoad = async ({ location }: { location: { href: string } }) => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    throw redirect({ to: "/auth", search: { redirect: location.href } });
+  }
+};
+
 export const Route = createFileRoute("/statement/$accountId/$month")({
   ssr: false,
-  head: () => ({
-    meta: [
-      { title: "Statement — Hooked" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
-      throw redirect({ to: "/auth", search: { redirect: location.href } });
-    }
-  },
+  head: statementHead,
+  beforeLoad: statementBeforeLoad,
   component: StatementPage,
 });
 
