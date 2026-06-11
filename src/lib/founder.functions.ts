@@ -72,7 +72,14 @@ async function tableCount(table: string, filters?: (query: any) => any) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let query = (supabaseAdmin as any).from(table).select("*", { count: "exact", head: true });
   if (filters) query = filters(query);
-  const { count, error } = (await query) as CountResult;
+  let { count, error } = (await query) as CountResult;
+  if (error && filters) {
+    const message = String(error instanceof Error ? error.message : error);
+    if (/closed_at|schema cache|does not exist/i.test(message)) {
+      const fallback = (supabaseAdmin as any).from(table).select("*", { count: "exact", head: true });
+      ({ count, error } = (await fallback) as CountResult);
+    }
+  }
   if (error) throw error;
   return count ?? 0;
 }
@@ -111,7 +118,7 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
       tableCount("companies"),
       tableCount("profiles"),
       tableCount("drivers"),
-      tableCount("jobs"),
+      tableCount("jobs", (q) => q.is("closed_at", null)),
       tableCount("completed_jobs"),
       tableCount("applications"),
       tableCount("applications", (q) => q.gte("created_at", since30)),
@@ -134,6 +141,7 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
       admin
         .from("jobs")
         .select("id, company_id, status, priority, job_type, created_at")
+        .is("closed_at", null)
         .order("created_at", { ascending: false })
         .limit(1000),
       admin
@@ -162,7 +170,6 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
       companiesRes,
       profilesRes,
       driversRes,
-      jobsRes,
       completedJobsRes,
       applicationsRes,
       campaignsRes,
@@ -173,7 +180,20 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
     const companies = companiesRes.data ?? [];
     const profiles = profilesRes.data ?? [];
     const drivers = driversRes.data ?? [];
-    const jobs = jobsRes.data ?? [];
+    let jobs = jobsRes.data ?? [];
+    if (jobsRes.error) {
+      const message = String(jobsRes.error instanceof Error ? jobsRes.error.message : jobsRes.error);
+      if (/closed_at|schema cache|does not exist/i.test(message)) {
+        const { data: fallbackJobs, error: fallbackError } = await admin
+          .from("jobs")
+          .select("id, company_id, status, priority, job_type, created_at")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+        if (!fallbackError) jobs = fallbackJobs ?? [];
+      } else {
+        throw jobsRes.error;
+      }
+    }
     const completed = completedJobsRes.data ?? [];
     const applications = applicationsRes.data ?? [];
     const campaigns = campaignsRes.data ?? [];

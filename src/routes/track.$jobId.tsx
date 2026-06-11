@@ -15,6 +15,8 @@ const trackHead = () => ({
 
 interface TrackingData {
   status: "unassigned" | "assigned" | "en_route" | "on_scene" | "complete";
+  closed_outcome: "cancelled" | "goa" | null;
+  closed_reason: string | null;
   job_type: string;
   location: string;
   created_at: string;
@@ -68,7 +70,7 @@ function TrackPage() {
   const { jobId } = Route.useParams();
   const { t: token } = Route.useSearch();
   const [data, setData] = useState<TrackingData | null>(null);
-  const [state, setState] = useState<"loading" | "ok" | "done" | "invalid">("loading");
+  const [state, setState] = useState<"loading" | "ok" | "done" | "closed" | "invalid">("loading");
   const hadDataRef = useRef(false);
 
   useEffect(() => {
@@ -95,7 +97,7 @@ function TrackPage() {
       hadDataRef.current = true;
       const d = res as unknown as TrackingData;
       setData(d);
-      setState(d.status === "complete" ? "done" : "ok");
+      setState(d.closed_outcome ? "closed" : d.status === "complete" ? "done" : "ok");
     }
     poll();
     const id = setInterval(poll, 8000);
@@ -150,6 +152,25 @@ function TrackPage() {
             <p className="mt-2 text-sm text-slate-400">
               Thanks for choosing {data?.company_name ?? "us"}. Drive safe out there!
             </p>
+          </div>
+        )}
+
+        {state === "closed" && data && (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+              Job closed
+            </div>
+            <div className="mt-2 text-2xl font-bold text-white">
+              {data.closed_outcome === "goa" ? "Marked GOA" : "Job canceled"}
+            </div>
+            <p className="mt-2 text-sm text-slate-400">
+              {data.closed_outcome === "goa"
+                ? "Dispatch marked this tow as Gone on Arrival. This tracking link is no longer live."
+                : "Dispatch canceled this job. This tracking link is no longer live."}
+            </p>
+            {data.closed_reason && (
+              <p className="mt-3 text-xs text-slate-500">Note: {data.closed_reason}</p>
+            )}
           </div>
         )}
 
