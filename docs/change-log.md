@@ -26,6 +26,34 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-11 — Production Deployment
+
+### Goal
+
+- Promote the staging-reviewed work to **production** (explicitly approved: "deploy production").
+
+### Changed
+
+- Fast-forwarded `main` from `preview/staging-review` (no merge commit; `main` 168d0d0 → db5a358).
+- No new code changes; production ships the same validated tree as the preview plus the docs commit.
+
+### Verification
+
+- `bun run build` on `main` — PASSED (exit 0, ~6.3s).
+- Push `origin/main` 168d0d0..db5a358.
+- Vercel deployment `dpl_wDehw5uu6mHZt1sTUKXKXtzWRLvY` reached **READY**, `target: "production"`, region iad1, commit sha `db5a358`.
+
+### Deployment
+
+- **Production URL:** https://hookedv-2.vercel.app
+- Aliases: `hookedv-2-hookeddispatch-project.vercel.app`, `hookedv-2-git-main-hookeddispatch-project.vercel.app`.
+- Previous production (rollback target): commit `168d0d0`, deployment `dpl_D5kKJb13PbjXZvmnynxATNFWdQgS`.
+
+### Risks / Follow-Up
+
+- Twilio voice/SMS webhook endpoints (`/api/public/twilio-*`) are now LIVE in production. Confirm Twilio/Supabase/Resend/OpenAI env vars are set in Vercel production scope before real traffic.
+- Auth-gated pages require a real Supabase session; smoke-test `/dashboard`, `/owner`, `/founder`, `/admin` with appropriate accounts.
+
 ## 2026-06-11 — Preview Deployment (staging review)
 
 ### Goal

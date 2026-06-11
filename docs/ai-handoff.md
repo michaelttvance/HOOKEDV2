@@ -13,14 +13,15 @@ Update this file before every Claude/Codex/AI session stops.
 
 ## Current Deployment (2026-06-11)
 
-- **Live preview (staging review):** https://hookedv-2-git-preview-staging-review-hookeddispatch-project.vercel.app
-- Branch: `preview/staging-review` (off `main`; `main` NOT touched/merged/deployed).
-- Commit: `50b7a78` "Preview Hooked app updates for staging review" (53 files, +6838 / -841).
-- Build: `bun run build` PASSED (exit 0). Vercel deployment `dpl_8sAJt8YnCNj9TRKXFhYjaKgzpxcZ` state **READY**, `target: null` → **PREVIEW, not production**.
+- **PRODUCTION (live):** https://hookedv-2.vercel.app (aliases: `hookedv-2-hookeddispatch-project.vercel.app`, `hookedv-2-git-main-hookeddispatch-project.vercel.app`)
+- Branch: `main` (fast-forwarded from `preview/staging-review`, explicitly approved with "deploy production").
+- Commit: `db5a358` "Update handoff + change-log for deployment" (FF includes `50b7a78` app changes: 53 files, +6838 / -841).
+- Build: `bun run build` PASSED (exit 0). Vercel deployment `dpl_wDehw5uu6mHZt1sTUKXKXtzWRLvY` state **READY**, `target: "production"`, region iad1.
 - Added `.vercelignore` to keep secrets/archives/`artifacts/`/`local-archive/`/`scripts/` out of uploads.
-- Twilio webhook routes shipped (build-required via `routeTree.gen.ts`) but live-but-dormant on preview.
-- Pages to review: `/`, `/demo`, `/dashboard`, `/driver`, `/owner`, `/founder`, `/admin`, `/apply` (app pages need an authed Supabase session in preview).
-- Next: review preview, then decide on a dedicated, approved merge-to-`main` (production) pass.
+- Twilio webhook routes are now **live in production** (`/api/public/twilio-*`) — verify Twilio env vars/secrets are configured in Vercel production before routing real call/SMS traffic.
+- Prior preview deploy: `dpl_8sAJt8YnCNj9TRKXFhYjaKgzpxcZ` (`target: null`) at https://hookedv-2-git-preview-staging-review-hookeddispatch-project.vercel.app — still available.
+- Pages to review: `/`, `/demo`, `/dashboard`, `/driver`, `/owner`, `/founder`, `/admin`, `/apply` (app pages need an authed Supabase session).
+- Rollback: previous production was commit `168d0d0` (deployment `dpl_D5kKJb13PbjXZvmnynxATNFWdQgS`, marked rollback candidate).
 
 ## Last Completed Work
 
