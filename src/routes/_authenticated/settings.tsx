@@ -6,6 +6,7 @@ import { useDispatch, type SmsTemplates, type PricingConfig, DEFAULT_PRICING } f
 import { useAuth } from "../../lib/use-auth";
 import { supabase } from "../../integrations/supabase/client";
 import { cn } from "../../lib/utils";
+import { safePublicError } from "../../lib/public-errors";
 
 const INBOUND_DOMAIN = "inbound.hookaidashboard.com";
 
@@ -65,20 +66,28 @@ function SettingsPage() {
     setDemoBusy(action);
     setDemoMsg(null);
     try {
+      const fallback = "We couldn't update the demo data right now. Please try again in a few minutes.";
       const fn = action === "load" ? "seed_demo_data" : "clear_demo_data";
       // Call as a method on the client so `this` stays bound (don't extract supabase.rpc).
       const client = supabase as unknown as {
         rpc: (n: string) => Promise<{ error: { message?: string } | null }>;
       };
       const { error } = await client.rpc(fn);
-      if (error) throw new Error(error.message ?? "rpc failed");
+      if (error) {
+        console.warn("[settings] demo data action failed", error);
+        throw new Error(fallback);
+      }
       // Refresh the live board queries so the change shows immediately
       qc.invalidateQueries({ queryKey: ["drivers", profile.companyId] });
       qc.invalidateQueries({ queryKey: ["jobs", profile.companyId] });
       qc.invalidateQueries({ queryKey: ["completed_jobs", profile.companyId] });
       setDemoMsg(action === "load" ? "Sample data loaded — open the dispatch board." : "Demo data cleared.");
     } catch (err) {
-      setDemoMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setDemoMsg(
+        err instanceof Error
+          ? err.message
+          : "We couldn't update the demo data right now. Please try again in a few minutes.",
+      );
     } finally {
       setDemoBusy(null);
     }
@@ -133,7 +142,15 @@ function SettingsPage() {
         .select("inbound_email_code")
         .eq("id", profile.companyId!)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        throw new Error(
+          safePublicError(
+            "We couldn't load the request link right now. Please refresh and try again.",
+            error,
+            "[settings] inbound code load failed",
+          ),
+        );
+      }
       return (data as { inbound_email_code: string | null } | null)?.inbound_email_code ?? null;
     },
   });
