@@ -47,7 +47,7 @@ Routes are file-based. Do not create Next.js/Remix directories such as `src/page
 - **Hooked staff routes:**
   - `/founder` platform KPIs/marketing/customer health
   - `/admin` signup/application approvals
-- **Public API/webhooks:** `src/routes/api/public/*`, including approval action, inbound email, and uncommitted Twilio routes.
+- **Public API/webhooks:** `src/routes/api/public/*`, including approval action, inbound email, and Twilio voice/SMS routes (deployed; inbound webhooks not yet active — see Twilio section below).
 
 ## Auth Flow
 
@@ -104,7 +104,32 @@ Server-only:
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT`
 
-Important: uncommitted Twilio code references `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`, and DB columns such as `companies.twilio_number`, `companies.forward_phone`, and table `missed_calls`, but those are not listed in `.env.example` yet. This is part of the open Twilio decision.
+**Outbound status SMS (implemented, requires Vercel env vars):**
+
+Three env vars are required and must be set in Vercel → Project Settings → Environment Variables before outbound SMS will send:
+
+- `TWILIO_ACCOUNT_SID` — Twilio Account SID
+- `TWILIO_AUTH_TOKEN` — Twilio Auth Token
+- `TWILIO_PHONE_NUMBER` — "From" number in E.164 format (e.g. `+15551234567`)
+
+These power the three outbound SMS sends in `src/lib/dispatch-store.tsx` (job assigned, driver on scene, job complete) via `src/lib/sms.functions.ts`. If any var is missing, SMS sends fail silently — the `sms_messages` row is written to Supabase with `status: "failed"` and the job workflow continues normally. No schema changes are required; the `sms_messages` table exists in the live DB.
+
+**Inbound voice/SMS webhook recovery (not launch-ready):**
+
+The following routes are deployed to production but must NOT be pointed at from Twilio console yet:
+
+- `src/routes/api/public/twilio-voice.ts`
+- `src/routes/api/public/twilio-voice-status.ts`
+- `src/routes/api/public/twilio-sms.ts`
+- `src/lib/missed-calls.server.ts`
+
+These require DB schema objects that do not exist in the live database:
+
+- `companies.twilio_number` column
+- `companies.forward_phone` column
+- `missed_calls` table
+
+Do not configure Twilio webhook URLs pointing to the live app until these migrations are applied. See `docs/open-decisions.md` Decision #1b.
 
 ## Important Components and Modules
 
@@ -134,7 +159,7 @@ Important: uncommitted Twilio code references `TWILIO_ACCOUNT_SID` and `TWILIO_A
 - `dispatch-store.tsx`, because small changes affect many screens.
 - Google Maps loader/key handling and domain restrictions.
 - Push notifications/VAPID because browser security context and service worker behavior can be subtle.
-- Twilio/missed-call feature because it is uncommitted and may need DB/env/schema support.
+- Twilio/missed-call feature: outbound status SMS is deployed and works once env vars are set; inbound voice/SMS webhook recovery requires DB migrations before it can be enabled.
 - Demo assets/video generation because files are large and some are untracked.
 - Nested repo/workspace structure: work only in `extracted_project` unless explicitly asked.
 
@@ -144,13 +169,29 @@ Important: uncommitted Twilio code references `TWILIO_ACCOUNT_SID` and `TWILIO_A
 - `src/routeTree.gen.ts` is generated and frequently changes during builds.
 - TanStack Router auto code splitting was disabled in `vite.config.ts` after dev-overlay/compile issues around generated split references.
 - Some server functions still use deprecated `createServerFn().inputValidator()` instead of `.validator()`. This is a warning, not currently blocking.
-- Twilio/missed-call integration is not complete/reviewed and may reference missing env vars, DB columns, or migrations.
-- `.env.example` does not list Twilio env vars even though Twilio code references them.
+- Outbound Twilio status SMS is deployed and functional pending env var setup (see Environment Variables section). `.env.example` now lists all three required vars.
+- Inbound Twilio voice/SMS webhook routes are deployed but cannot function until `companies.twilio_number`, `companies.forward_phone`, and `missed_calls` DB objects are migrated.
 - `artifacts/`, `public/demo-product-video.html`, `public/videos/`, and `scripts/record-product-demo.mjs` are large/untracked demo workflow pieces. Do not delete casually.
 
-## Uncommitted Twilio / Missed-Call Integration Context
+## Twilio / Missed-Call Integration Context
 
-Uncommitted files:
+### Outbound status SMS (live in production, pending env var setup)
+
+Files: `src/lib/sms.functions.ts`, `src/lib/dispatch-store.tsx → enqueueSms()`.
+
+Three outbound SMS sends are wired and deployed:
+
+1. Job assigned → driver receives assignment notice with live tracking link.
+2. Driver on scene → customer receives on-scene notification.
+3. Job complete → customer receives completion notice with price and optional Google review link.
+
+All three write a `sms_messages` row before attempting send. Failures are non-blocking (try/catch in `enqueueSms()`). The `sms_messages` table exists in the live DB.
+
+To activate: add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` to Vercel environment variables, then redeploy.
+
+### Inbound voice/SMS webhook recovery (parked — DB schema required)
+
+Files:
 
 - `src/lib/twilio.server.ts`
 - `src/lib/missed-calls.server.ts`
@@ -158,17 +199,11 @@ Uncommitted files:
 - `src/routes/api/public/twilio-voice-status.ts`
 - `src/routes/api/public/twilio-sms.ts`
 
-Intended behavior:
+Intended behavior: incoming call to a company Twilio number forwards to `companies.forward_phone`; if unanswered, a missed-call lead record is created and a recovery SMS is sent; inbound SMS replies update the lead.
 
-- Incoming call to a company Twilio number forwards to `companies.forward_phone`.
-- If not answered, a missed-call record is created, an incoming lead job is inserted, and a recovery SMS is sent.
-- Inbound SMS replies update the missed-call record and job location/notes.
+Blocked by missing DB objects (`companies.twilio_number`, `companies.forward_phone`, `missed_calls` table). Also requires Twilio webhook signature validation before real production traffic.
 
-Risks:
-
-- Env vars and DB schema support need explicit approval and verification.
-- Public webhooks need security/signature verification before real production use.
-- Do not delete or finish this feature without a founder decision.
+Do not point Twilio webhooks at the live app until a dedicated migration PR lands. Do not delete these files without founder approval.
 
 ## Access Notes
 
@@ -182,7 +217,7 @@ Risks:
 
 - Auth/role checks, approval gates, trial gate, or staff allowlists.
 - Supabase migrations, RLS policies, DB functions.
-- Twilio/missed-call code and related env/schema decisions.
+- Twilio inbound voice/SMS webhook code and the DB migrations it requires (missed-call recovery feature).
 - Demo assets/video files/scripts.
 - Payment/revenue integration decisions.
 - Nested repo structure or `.git`/remote settings.

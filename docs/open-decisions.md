@@ -2,23 +2,54 @@
 
 Founder decisions required before coding high-risk or product-direction changes.
 
-## 1. Twilio Integration
+## 1a. Outbound Status SMS — DECIDED / IMPLEMENTED (env vars required)
 
-Decision needed: keep, finish, or remove.
+Decision: keep and ship.
 
-Current state:
+Current state (as of 2026-06-12):
 
-- Uncommitted Twilio voice/SMS webhook files exist.
-- They reference Twilio env vars not currently in `.env.example`.
-- They appear to require DB support for company Twilio numbers, forward phones, and `missed_calls`.
+- Outbound status SMS is implemented and deployed to production.
+- Live smoke test (2026-06-12) confirmed all dispatcher/driver operations succeed; SMS failure is non-blocking.
+- The `sms_messages` table exists in the live DB.
+- Three SMS sends are wired: job assigned, driver on scene, job complete.
+- Console warning during smoke test: `"SMS send failed: Twilio is not configured"` — caused by missing env vars only.
+
+Action required (Vercel environment variables — no code or schema changes needed):
+
+1. Set `TWILIO_ACCOUNT_SID` in Vercel → Project Settings → Environment Variables (Production + Preview).
+2. Set `TWILIO_AUTH_TOKEN` in Vercel → Project Settings → Environment Variables (Production + Preview).
+3. Set `TWILIO_PHONE_NUMBER` in Vercel → Project Settings → Environment Variables (E.164 format, e.g. `+15551234567`).
+4. Trigger a new Vercel deployment after adding vars (existing running instances do not pick up new env vars).
+
+This decision is closed. No further code or schema work needed for outbound SMS.
+
+## 1b. Inbound Voice/SMS Webhook Recovery — OPEN (DB schema required before enabling)
+
+Decision needed: finish in Phase 4 or park longer.
+
+Current state (as of 2026-06-12):
+
+- Webhook route files are deployed to production but NOT configured in Twilio console.
+- Inbound webhooks will 500 if pointed at the live app because required DB objects are missing.
+
+Prerequisite DB objects (do not enable webhooks until all three exist in live DB):
+
+- `companies.twilio_number` column — per-company inbound Twilio number
+- `companies.forward_phone` column — per-company forward-to phone number
+- `missed_calls` table — lead records for unanswered calls
+
+Additional requirements before production traffic:
+
+- Twilio webhook request signature validation (currently absent — security gap).
+- Settings UI `as never` TypeScript casts for the two missing columns need real generated types once columns are migrated.
 
 Options:
 
-- Keep parked and document as future feature.
-- Finish properly with migrations, env docs, Twilio signature validation, and tests.
-- Remove from working tree if founder does not want missed-call recovery now.
+- Finish properly: write a dedicated migration PR adding the three DB objects, add signature validation, update TypeScript types, test end-to-end.
+- Park: keep files deployed but unconfigured; document as Phase 4+ feature; add a note to Twilio console setup docs.
+- Remove: delete the four inbound files — only with explicit founder approval.
 
-Do not decide this by assumption.
+Do not point Twilio inbound webhook URLs at the production app until this decision is acted on and the DB migration is applied.
 
 ## 2. Demo Assets
 
