@@ -47,6 +47,147 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: boolean; e
   }
 }
 
+type OwnerAlertInput = {
+  surface: string;
+  route?: string;
+  operation?: string;
+  error: unknown;
+  note?: string;
+};
+
+const OWNER_ALERT_RECIPIENT = "michaelttvance@gmail.com";
+const OWNER_ALERT_TTL_MS = 10 * 60 * 1000;
+const ownerAlertCache = new Map<string, number>();
+
+function sanitizeAlertText(value: string): string {
+  return value
+    .replace(/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/gi, "[redacted-email]")
+    .replace(/\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, "[redacted-phone]")
+    .replace(/https?:\/\/[^\s)]+/gi, "[redacted-url]")
+    .replace(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi,
+      "[redacted-id]",
+    )
+    .replace(/\b(?:eyJ[a-zA-Z0-9._-]+|sb_[A-Za-z0-9_-]+|sk_[A-Za-z0-9_-]+|pk_[A-Za-z0-9_-]+|rk_[A-Za-z0-9_-]+)\b/g, "[redacted-token]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240);
+}
+
+function summarizeError(error: unknown): { type: string; summary: string } {
+  if (error instanceof Error) {
+    return {
+      type: error.name || "Error",
+      summary: sanitizeAlertText(error.message || "Unknown error"),
+    };
+  }
+
+  if (typeof error === "string") {
+    return { type: "Error", summary: sanitizeAlertText(error || "Unknown error") };
+  }
+
+  try {
+    return {
+      type: "Error",
+      summary: sanitizeAlertText(JSON.stringify(error) || "Unknown error"),
+    };
+  } catch {
+    return { type: "Error", summary: "Unknown error" };
+  }
+}
+
+export function ownerAlertEmail(args: {
+  timestamp: string;
+  environment: string;
+  surface: string;
+  route: string;
+  operation: string;
+  errorType: string;
+  summary: string;
+  fingerprint: string;
+  note?: string;
+}) {
+  return shell(`
+    <h1 style="margin:0 0 12px;font-size:22px;color:${brand.text};">Critical app error</h1>
+    <p style="margin:0 0 16px;color:${brand.text};font-size:15px;line-height:1.6;">Hooked hit a site-disturbing error that should be reviewed.</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;border:1px solid ${brand.border};border-radius:8px;padding:12px 16px;margin-bottom:20px;">
+      ${alertRow("Timestamp", escape(args.timestamp))}
+      ${alertRow("Environment", escape(args.environment))}
+      ${alertRow("Surface", escape(args.surface))}
+      ${alertRow("Route", escape(args.route))}
+      ${alertRow("Operation", escape(args.operation))}
+      ${alertRow("Error type", escape(args.errorType))}
+      ${alertRow("Summary", escape(args.summary))}
+      ${alertRow("Fingerprint", escape(args.fingerprint))}
+      ${args.note ? alertRow("Notes", escape(args.note)) : ""}
+    </table>
+    <p style="margin:0;color:${brand.muted};font-size:13px;line-height:1.6;">
+      This alert intentionally omits stack traces, tokens, customer data, and media URLs.
+      Please check logs and the app surface for the full internal details.
+    </p>
+  `);
+}
+
+function alertRow(label: string, value: string) {
+  return `<tr><td style="padding:6px 0;color:${brand.muted};font-size:13px;width:130px;vertical-align:top;">${label}</td><td style="padding:6px 0;color:${brand.text};font-size:14px;line-height:1.5;">${value}</td></tr>`;
+}
+
+export async function sendOwnerAlert(input: OwnerAlertInput): Promise<{ ok: boolean; skipped?: boolean }> {
+  const { type, summary } = summarizeError(input.error);
+  const fingerprint = [
+    input.surface,
+    input.route ?? "",
+    input.operation ?? "",
+    type,
+    summary,
+  ]
+    .join("|")
+    .toLowerCase();
+
+  const now = Date.now();
+  const lastSent = ownerAlertCache.get(fingerprint);
+  if (lastSent && now - lastSent < OWNER_ALERT_TTL_MS) {
+    console.warn("[alerts] Suppressed duplicate owner alert", {
+      surface: input.surface,
+      route: input.route ?? null,
+      operation: input.operation ?? null,
+      errorType: type,
+    });
+    return { ok: true, skipped: true };
+  }
+
+  ownerAlertCache.set(fingerprint, now);
+
+  const sent = await sendEmail({
+    to: OWNER_ALERT_RECIPIENT,
+    from: "Hooked Alerts <alerts@hookaidashboard.com>",
+    subject: `[Hooked] Critical app error — ${input.surface}`,
+    html: ownerAlertEmail({
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV ?? "unknown",
+      surface: input.surface,
+      route: input.route ?? "—",
+      operation: input.operation ?? "—",
+      errorType: type,
+      summary,
+      fingerprint,
+      note: input.note,
+    }),
+  });
+
+  if (!sent.ok) {
+    console.error("[alerts] Owner alert send failed", {
+      surface: input.surface,
+      route: input.route ?? null,
+      operation: input.operation ?? null,
+      errorType: type,
+      reason: sent.error,
+    });
+  }
+
+  return sent;
+}
+
 // ---- Branded templates ----
 
 const brand = {

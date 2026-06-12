@@ -10,6 +10,7 @@ import {
   type InboundEmailRow,
 } from "../../lib/inbound.functions";
 import { cn } from "../../lib/utils";
+import { safePublicError } from "../../lib/public-errors";
 
 export const Route = createFileRoute("/_authenticated/inbound-emails")({
   head: () => ({ meta: [{ title: "Inbound emails — Hooked" }] }),
@@ -45,7 +46,13 @@ function InboundEmailsPage() {
       await retry({ data: { id } });
       await qc.invalidateQueries({ queryKey: ["inbound-emails"] });
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      alert(
+        safePublicError(
+          "We couldn't retry that email right now. Please try again in a few minutes.",
+          e,
+          "[inbound-emails] retry failed",
+        ),
+      );
     } finally {
       setBusyId(null);
     }
@@ -178,7 +185,12 @@ function EmailDetail({ row, onClose }: { row: InboundEmailRow; onClose: () => vo
         </div>
         {row.error && (
           <div className="mb-3 flex items-start gap-2 rounded-md border border-urgent/40 bg-urgent/10 p-3 text-xs text-urgent">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {row.error}
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{" "}
+            {safePublicError(
+              "This email could not be processed right now.",
+              row.error,
+              "[inbound-emails] row error",
+            )}
           </div>
         )}
         {row.parsed_json && (
@@ -241,7 +253,13 @@ function ManualJobDialog({
       });
       onCreated();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(
+        safePublicError(
+          "We couldn't create that job right now. Please try again in a few minutes.",
+          e,
+          "[inbound-emails] create job failed",
+        ),
+      );
     } finally {
       setBusy(false);
     }

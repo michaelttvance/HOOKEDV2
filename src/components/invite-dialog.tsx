@@ -3,6 +3,7 @@ import { X, UserPlus, Loader2, Copy, Check, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../lib/use-auth";
 import { cn } from "../lib/utils";
+import { safePublicError } from "../lib/public-errors";
 
 interface Invite {
   id: string;
@@ -42,7 +43,13 @@ export function InviteDialog({ onClose }: { onClose: () => void }) {
       .insert({ company_id: profile.companyId, email, role });
     setBusy(false);
     if (error) {
-      setError(error.message);
+      setError(
+        safePublicError(
+          "We couldn't create that invite right now. Please try again in a few minutes.",
+          error,
+          "[invite-dialog] invite create failed",
+        ),
+      );
       return;
     }
     setEmail("");

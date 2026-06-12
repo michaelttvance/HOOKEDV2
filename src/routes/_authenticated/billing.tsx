@@ -35,6 +35,7 @@ import {
   emailStatement,
 } from "@/lib/billing.functions";
 import { cn } from "@/lib/utils";
+import { safePublicError } from "@/lib/public-errors";
 
 const billingHead = () => ({
   meta: [
@@ -762,7 +763,9 @@ function StatementModal({
               : "border-urgent/40 bg-urgent/10 text-urgent",
           )}
         >
-          {emailResult.ok ? "Statement emailed." : `Failed: ${emailResult.error}`}
+          {emailResult.ok
+            ? "Statement emailed."
+            : "We couldn't send that statement right now. Please try again in a few minutes."}
         </div>
       )}
       <div className="mt-4 flex justify-end gap-2">
@@ -1002,7 +1005,11 @@ function SettingsTab() {
       )}
       {mSave.error && (
         <div className="rounded-md border border-urgent/40 bg-urgent/10 p-2 text-xs text-urgent">
-          {(mSave.error as Error).message}
+          {safePublicError(
+            "We couldn't save those billing settings right now. Please try again in a few minutes.",
+            mSave.error,
+            "[billing] billing settings save failed",
+          )}
         </div>
       )}
 
