@@ -52,7 +52,7 @@ export function PublicFooter({
           <div>
             <div className={cn("text-sm font-bold tracking-tight", s.title)}>Hooked</div>
             <div className={cn("text-[11px] uppercase tracking-widest", s.text)}>
-              AI Tow Dispatch
+              Dispatch Platform
             </div>
           </div>
         </div>

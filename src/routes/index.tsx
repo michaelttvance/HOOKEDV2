@@ -22,7 +22,6 @@ import {
   Zap,
   Camera,
   BarChart3,
-  Bot,
   Quote,
   Check,
   Minus,
@@ -46,17 +45,17 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hooked — AI Tow Dispatch & Towing Software" },
+      { title: "Hooked — Dispatch Software for Tow Operators" },
       {
         name: "description",
         content:
-          "Hooked is modern dispatch software for tow operators — AI-powered driver matching, live GPS tracking, motor club workflows, impound management, billing, and owner analytics in one platform.",
+          "Hooked is the dispatch platform built for tow operators — job intake, driver coordination, live GPS tracking, customer visibility, motor club workflows, impound management, billing, and owner analytics in one focused system.",
       },
-      { property: "og:title", content: "Hooked — AI Tow Dispatch & Towing Software" },
+      { property: "og:title", content: "Hooked — Dispatch Software for Tow Operators" },
       {
         property: "og:description",
         content:
-          "Run your towing company on one modern platform: dispatch, driver app, billing, impound, and AI assistance.",
+          "Run your towing operation on one modern platform: dispatch board, driver app, customer tracking, billing, and impound — built for operators who expect more from their software.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://hookaidashboard.com/" },
@@ -223,7 +222,7 @@ function MarketingPage() {
               to="/apply"
               className="group rounded-xl bg-[#FACC15] px-4 py-2 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:bg-[#EAB308] hover:shadow-[0_6px_20px_0_rgba(250,204,21,0.35)] active:scale-[0.98]"
             >
-              Start free trial
+              Start 30-day trial
             </Link>
           </div>
 
@@ -259,7 +258,7 @@ function MarketingPage() {
                 onClick={() => setNavOpen(false)}
                 className="rounded-xl bg-[#FACC15] px-4 py-2 text-center font-bold text-black"
               >
-                Start free trial
+                Start 30-day trial
               </Link>
             </nav>
           </div>
@@ -275,22 +274,23 @@ function MarketingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FACC15] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FACC15]" />
               </span>
-              AI-powered dispatch for tow operators
+              Modern dispatch platform for tow operators
             </div>
           </Reveal>
           <Reveal delay={80}>
             <h1 className="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Run the tow operation
+              A better operating system
               <br />
               <span className="bg-gradient-to-r from-[#FACC15] via-amber-300 to-[#FACC15] bg-clip-text text-transparent">
-                your team deserves.
+                for towing teams.
               </span>
             </h1>
           </Reveal>
           <Reveal delay={160}>
             <p className="mx-auto mt-6 max-w-2xl text-base text-slate-400 sm:text-lg">
-              Hooked gives tow operators one operating system for intake, dispatch, driver coordination,
-              customer tracking, billing, and release paperwork without the usual office chaos.
+              From first call to paid invoice — Hooked brings intake, dispatch, driver coordination,
+              customer tracking, billing, and impound into one focused command center built for
+              operators who expect clarity and control.
             </p>
           </Reveal>
           <Reveal delay={240}>
@@ -300,14 +300,14 @@ function MarketingPage() {
                 onClick={() => track("start_trial_click", { location: "home_hero" })}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] active:scale-[0.98] sm:w-auto"
               >
-                Start free trial
+                Start your 30-day trial
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 to="/demo"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-white/30 hover:bg-white/10 sm:w-auto"
               >
-                Watch the demo
+                See Hooked in action
               </Link>
             </div>
           </Reveal>
@@ -365,6 +365,30 @@ function MarketingPage() {
 
         {/* Trust / integrations */}
         <IntegrationStrip />
+
+        {/* Proof in action — dispatch command center preview */}
+        <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <SectionEyebrow>Proof in action</SectionEyebrow>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Your dispatch command center
+              </h2>
+              <p className="mt-4 text-slate-400">
+                A look at the Hooked board — active jobs, fleet status, live ETAs, and driver positions,
+                all in one focused view your whole team can read at a glance.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <LiveDashboardPreview />
+          </Reveal>
+          <Reveal delay={180}>
+            <p className="mt-5 text-center text-xs text-slate-600">
+              Demo data only — all names, jobs, and locations shown are fictional. No real customer or operational data is displayed.
+            </p>
+          </Reveal>
+        </section>
 
         {/* Features — bento */}
         <section id="features" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
@@ -438,7 +462,7 @@ function MarketingPage() {
                 icon: Navigation,
                 title: "Start dispatching",
                 description:
-                  "Jobs come in, the AI suggests the best driver, and your team tracks everything from pickup to invoice.",
+                  "Jobs come in, your dispatcher assigns the best driver, and the team tracks everything from pickup to invoice.",
               },
             ].map((s, i) => (
               <Reveal key={s.step} delay={i * 120}>
@@ -517,7 +541,7 @@ function MarketingPage() {
               {[
                 {
                   quote:
-                    "We moved our dispatch team into Hooked and our assignment times dropped almost immediately. The AI suggestions actually save us time.",
+                    "We moved our dispatch team into Hooked and our assignment times dropped almost immediately. The driver suggestions and board visibility genuinely save us time every shift.",
                   name: "Early access operator",
                   role: "12-truck fleet · Midwest",
                 },
@@ -570,7 +594,7 @@ function MarketingPage() {
               <div className="relative overflow-hidden rounded-3xl border border-[#FACC15]/30 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-8 text-center shadow-[0_0_60px_-20px_rgba(250,204,21,0.4)]">
                 <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#FACC15]/10 blur-3xl" />
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FACC15]/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#FACC15]">
-                  <Sparkles className="h-3.5 w-3.5" /> Free Trial
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Free Trial
                 </div>
                 <div className="mt-5 text-5xl font-extrabold text-white">30 days</div>
                 <p className="mt-2 text-sm text-slate-400">
@@ -580,7 +604,7 @@ function MarketingPage() {
                   {[
                     "Full access to every feature, no limits",
                     "Unlimited dispatchers & drivers",
-                    "AI dispatch assistant included",
+                    "Smart dispatch assistant included",
                     "Driver mobile app",
                     "Billing, impound & rotations",
                     "Motor club tracking",
@@ -598,12 +622,25 @@ function MarketingPage() {
                   to="/apply"
                   className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] active:scale-[0.98]"
                 >
-                  Start your free trial
+                  Start your 30-day trial
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </div>
           </Reveal>
+        </section>
+
+        {/* Trust / legal note */}
+        <section className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4 text-xs leading-relaxed text-slate-500">
+            <span className="font-semibold text-slate-400">Data &amp; operations note: </span>
+            Trial and demo access is subject to Hooked's{" "}
+            <Link to="/terms" className="underline hover:text-slate-300">Terms of Service</Link>.
+            {" "}Operators remain responsible for their towing operations and all applicable legal,
+            regulatory, and safety compliance. Hooked supports operational workflows and does not
+            provide legal, regulatory, or compliance advice.{" "}
+            <Link to="/privacy" className="underline hover:text-slate-300">Privacy Policy</Link>.
+          </div>
         </section>
 
         {/* FAQ */}
@@ -658,24 +695,25 @@ function MarketingPage() {
               <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-[#FACC15]/10 blur-3xl" />
               <div className="absolute -bottom-20 -right-20 h-60 w-60 rounded-full bg-sky-500/10 blur-3xl" />
               <h2 className="relative text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Run a sharper towing operation
+                Build a more controlled dispatch operation.
               </h2>
               <p className="relative mx-auto mt-4 max-w-xl text-slate-400">
-                Bring dispatch, drivers, customer updates, and closeout into one operating system your team can trust on a busy day.
+                Bring dispatch, drivers, customer visibility, and closeout into one operating
+                system your team can trust on a busy shift — starting with a full 30-day trial.
               </p>
               <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   to="/apply"
                   className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-6 py-3.5 text-sm font-bold text-black shadow-[0_4px_14px_0_rgba(250,204,21,0.25)] transition-all hover:bg-[#EAB308] hover:shadow-[0_8px_28px_0_rgba(250,204,21,0.4)] active:scale-[0.98] sm:w-auto"
                 >
-                  Start free trial
+                  Start your 30-day trial
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   to="/demo"
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-white/30 hover:bg-white/10 sm:w-auto"
                 >
-                  Watch the demo
+                  See Hooked in action
                 </Link>
               </div>
             </div>
@@ -741,7 +779,7 @@ function PageStyles() {
 
 const DEMO_SCENES = [
   { key: "call", label: "Call comes in", dur: 3600 },
-  { key: "entry", label: "AI Quick Entry", dur: 6200 },
+  { key: "entry", label: "Smart entry", dur: 6200 },
   { key: "assign", label: "Smart assign", dur: 4800 },
   { key: "track", label: "Customer tracking", dur: 5200 },
   { key: "paid", label: "Done & paid", dur: 4400 },
@@ -847,7 +885,7 @@ function ProductDemoFilm() {
 
         {/* Footer chips */}
         <div className="grid gap-3 border-t border-white/10 bg-white/[0.035] p-4 text-xs text-slate-400 sm:grid-cols-4 sm:p-5">
-          {["AI Quick Entry", "Closest-driver assign", "Live customer tracking", "Paid in one tap"].map(
+          {["Smart job entry", "Closest-driver assign", "Live customer tracking", "Paid in one tap"].map(
             (item) => (
               <div key={item} className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-[#FACC15]" />
@@ -909,7 +947,7 @@ function SceneCall({ active }: { active: boolean }) {
   );
 }
 
-/* Scene 2 — AI Quick Entry: messy note types, AI structures it */
+/* Scene 2 — Smart entry: dispatcher types rough notes, system structures the job */
 function SceneEntry({ active, loops }: { active: boolean; loops: number }) {
   const [typed, setTyped] = useState("");
   const done = typed.length >= DEMO_NOTE.length;
@@ -951,10 +989,10 @@ function SceneEntry({ active, loops }: { active: boolean; loops: number }) {
             <FileText className="h-3 w-3" /> Type it the way you'd say it
           </div>
         </div>
-        {/* AI parsed */}
+        {/* Parsed job fields */}
         <div className="flex flex-col rounded-2xl border border-[#FACC15]/25 bg-gradient-to-br from-[#FACC15]/[0.08] to-white/[0.02] p-4">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[#FACC15]">
-            <Sparkles className="h-3.5 w-3.5" /> AI Quick Entry
+            <Sparkles className="h-3.5 w-3.5" /> Smart Entry
           </div>
           <div className="mt-3 grid flex-1 grid-cols-2 gap-2.5 content-start">
             {fields.map((f, i) => (
@@ -1009,11 +1047,11 @@ function SceneAssign({ active, loops }: { active: boolean; loops: number }) {
                 <Navigation className="h-3 w-3" /> I-280 N · Mile 42 · Tow
               </div>
             </div>
-            {/* AI suggestion */}
+            {/* Driver suggestion */}
             <div className="flex items-start gap-2 rounded-2xl border border-[#FACC15]/30 bg-[#0B1220] px-3.5 py-3">
-              <Bot className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />
               <p className="text-xs text-slate-300">
-                <span className="font-semibold text-white">AI:</span> Sara P. (T-12) is closest —
+                <span className="font-semibold text-white">Suggested:</span> Sara P. (T-12) is closest —
                 <span className="font-semibold text-[#FACC15]"> 1.2 mi · ETA 6 min</span>. Assign &amp; notify Amanda?
               </p>
             </div>
@@ -1169,10 +1207,10 @@ function ScenePaid({ active, loops }: { active: boolean; loops: number }) {
 function CountUpStats() {
   const { ref, inView } = useInView<HTMLDivElement>();
   const stats = [
-    { target: 42, suffix: "%", label: "Faster avg. dispatch", decimals: 0 },
-    { target: 30, suffix: " days", label: "Free trial, no card", decimals: 0 },
-    { target: 5, prefix: "<", suffix: " min", label: "From call to assigned", decimals: 0 },
-    { target: 1, suffix: " platform", label: "Dispatch · billing · impound", decimals: 0 },
+    { target: 6, suffix: "+", label: "Towing workflows in one system", decimals: 0 },
+    { target: 30, suffix: " days", label: "Free trial · full platform", decimals: 0 },
+    { target: 5, prefix: "<", suffix: " min", label: "From call to driver assigned", decimals: 0 },
+    { target: 1, suffix: " login", label: "Dispatch · billing · impound · tracking", decimals: 0 },
   ];
   return (
     <section ref={ref} className="border-y border-white/5 bg-white/[0.02]">
@@ -1228,7 +1266,7 @@ function IntegrationStrip() {
     { icon: Receipt, label: "Invoicing" },
     { icon: MessageSquare, label: "SMS updates" },
     { icon: Warehouse, label: "Impound lots" },
-    { icon: Bot, label: "AI assistant" },
+    { icon: Sparkles, label: "Dispatch assistant" },
   ];
   const row = [...items, ...items];
   return (
@@ -1262,24 +1300,24 @@ function IntegrationStrip() {
 function BentoFeatures() {
   return (
     <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {/* Large AI feature */}
+      {/* Dispatch assistant feature — prominent card */}
       <Reveal className="sm:col-span-2 lg:row-span-2">
         <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#FACC15]/20 bg-gradient-to-br from-[#FACC15]/[0.08] to-white/[0.02] p-7">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#FACC15]/10 blur-3xl transition-opacity group-hover:opacity-80" />
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FACC15]/20 text-[#FACC15]">
             <Sparkles className="h-6 w-6" />
           </div>
-          <h3 className="mt-5 text-xl font-bold text-white">AI Dispatch Assistant</h3>
+          <h3 className="mt-5 text-xl font-bold text-white">Dispatch Command Center</h3>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">
-            Auto-suggests the best driver for every job based on location and availability,
-            drafts customer text updates, and watches SLA timers so nothing slips through the
-            cracks. It's like adding a senior dispatcher who never clocks out.
+            Suggests the closest available driver for every job, drafts customer ETA text updates,
+            and keeps SLA timers visible so your team can move fast without dropping details.
+            Built for dispatchers who run a tight operation.
           </p>
           <div className="mt-6 space-y-2">
             {[
-              "Closest-available driver matching",
+              "Closest-available driver suggestions",
               "Auto-drafted customer ETA texts",
-              "SLA & stalled-job alerts",
+              "SLA timers & stalled-job alerts",
             ].map((b) => (
               <div key={b} className="flex items-center gap-2 text-sm text-slate-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FACC15]" />
@@ -1289,9 +1327,9 @@ function BentoFeatures() {
           </div>
           <div className="mt-auto pt-6">
             <div className="flex items-center gap-2 rounded-xl border border-[#FACC15]/30 bg-[#0B1220]/60 px-3 py-2.5 text-xs text-slate-300 backdrop-blur">
-              <Bot className="h-4 w-4 shrink-0 text-[#FACC15]" />
+              <Sparkles className="h-4 w-4 shrink-0 text-[#FACC15]" />
               <span>
-                <span className="font-semibold text-white">AI:</span> Sara P. (T-12) is 1.2 mi from
+                <span className="font-semibold text-white">Suggested:</span> Sara P. (T-12) is 1.2 mi from
                 the I-280 call — assign &amp; notify customer?
               </span>
             </div>
@@ -1368,12 +1406,12 @@ function FeatureTabs() {
     },
     {
       id: "ai",
-      label: "AI assistant",
+      label: "Dispatch assist",
       icon: Sparkles,
       points: [
-        "Smart driver suggestions",
-        "Drafted customer messages",
-        "Watches every SLA for you",
+        "Closest-driver suggestions at a glance",
+        "Drafted customer ETA messages",
+        "SLA timers and stalled-job alerts",
       ],
       panel: <AiPanel />,
     },
@@ -1499,7 +1537,7 @@ function DriverPanel() {
 
 function AiPanel() {
   return (
-    <PanelShell title="AI assistant">
+    <PanelShell title="Dispatch assist">
       <div className="space-y-2.5">
         <div className="flex items-start gap-2 rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/[0.06] p-3">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />
@@ -1574,7 +1612,7 @@ function LiveDashboardPreview() {
     { customer: "Nina Alvarez", type: "Tow", location: "Mission Bay Garage L2", priority: "Standard", eta: 4 },
   ];
 
-  // Rotating AI suggestion + ticking ETAs to feel alive
+  // Rotating dispatch suggestion + ticking ETAs to feel alive
   const suggestions = [
     "Sara P. (T-12) is closest to Amanda Reyes — suggest assigning?",
     "Mike D. (T-07) frees up in ~3 min — hold Devon Park's lockout?",
@@ -1679,11 +1717,11 @@ function LiveDashboardPreview() {
               <span className="mt-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">{p.label}</span>
             </div>
           ))}
-          {/* AI suggestion bubble (rotating) */}
+          {/* Dispatch suggestion bubble (rotating) */}
           <div className="absolute bottom-3 left-3 right-3 flex items-start gap-2 rounded-xl border border-[#FACC15]/30 bg-[#0B1220]/90 px-3 py-2 backdrop-blur sm:right-auto sm:max-w-xs">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />
             <p key={sugIdx} className="animate-[fadeIn_0.4s_ease] text-[11px] text-slate-300">
-              <span className="font-semibold text-white">AI:</span> {suggestions[sugIdx]}
+              <span className="font-semibold text-white">Suggested:</span> {suggestions[sugIdx]}
             </p>
           </div>
         </div>
@@ -1730,7 +1768,7 @@ function LiveDashboardPreview() {
 
 function ComparisonTable() {
   const rows = [
-    "AI driver suggestions",
+    "Smart driver suggestions",
     "Customer 'track my tow' live link",
     "Live GPS map & ETAs",
     "Mobile driver app (no hardware)",
@@ -1821,8 +1859,8 @@ function RoiCalculator() {
         <Slider label="Jobs per truck / day" value={jobsPerTruck} min={1} max={20} onChange={setJobsPerTruck} suffix="jobs" />
         <Slider label="Avg. revenue per job" value={avgRevenue} min={40} max={500} step={5} onChange={setAvgRevenue} prefix="$" />
         <p className="text-[11px] leading-relaxed text-slate-500">
-          Estimates assume ~3.5 min saved per job from faster dispatch and ~8% more jobs captured
-          from quicker response times. Your results will vary — we'll model your real numbers during onboarding.
+          Estimates are illustrative only — actual results depend on your operation, team, and workflow.
+          We'll help you model your real numbers during onboarding.
         </p>
       </div>
 
