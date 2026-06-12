@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrialExpiredRouteImport } from './routes/trial-expired'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RejectedRouteImport } from './routes/rejected'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as FounderRouteImport } from './routes/founder'
@@ -47,6 +49,11 @@ const TrialExpiredRoute = TrialExpiredRouteImport.update({
   path: '/trial-expired',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -60,6 +67,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RejectedRoute = RejectedRouteImport.update({
   id: '/rejected',
   path: '/rejected',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PendingRoute = PendingRouteImport.update({
@@ -215,9 +227,11 @@ export interface FileRoutesByFullPath {
   '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
+  '/privacy': typeof PrivacyRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/trial-expired': typeof TrialExpiredRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -248,9 +262,11 @@ export interface FileRoutesByTo {
   '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
+  '/privacy': typeof PrivacyRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/trial-expired': typeof TrialExpiredRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -283,9 +299,11 @@ export interface FileRoutesById {
   '/founder': typeof FounderRoute
   '/owner': typeof OwnerRoute
   '/pending': typeof PendingRoute
+  '/privacy': typeof PrivacyRoute
   '/rejected': typeof RejectedRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/trial-expired': typeof TrialExpiredRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -318,9 +336,11 @@ export interface FileRouteTypes {
     | '/founder'
     | '/owner'
     | '/pending'
+    | '/privacy'
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/terms'
     | '/trial-expired'
     | '/billing'
     | '/dashboard'
@@ -351,9 +371,11 @@ export interface FileRouteTypes {
     | '/founder'
     | '/owner'
     | '/pending'
+    | '/privacy'
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/terms'
     | '/trial-expired'
     | '/billing'
     | '/dashboard'
@@ -385,9 +407,11 @@ export interface FileRouteTypes {
     | '/founder'
     | '/owner'
     | '/pending'
+    | '/privacy'
     | '/rejected'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/terms'
     | '/trial-expired'
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
@@ -420,9 +444,11 @@ export interface RootRouteChildren {
   FounderRoute: typeof FounderRoute
   OwnerRoute: typeof OwnerRoute
   PendingRoute: typeof PendingRoute
+  PrivacyRoute: typeof PrivacyRoute
   RejectedRoute: typeof RejectedRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   TrialExpiredRoute: typeof TrialExpiredRoute
   RequestCompanyIdRoute: typeof RequestCompanyIdRoute
   TrackJobIdRoute: typeof TrackJobIdRoute
@@ -441,6 +467,13 @@ declare module '@tanstack/react-router' {
       path: '/trial-expired'
       fullPath: '/trial-expired'
       preLoaderRoute: typeof TrialExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -462,6 +495,13 @@ declare module '@tanstack/react-router' {
       path: '/rejected'
       fullPath: '/rejected'
       preLoaderRoute: typeof RejectedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pending': {
@@ -702,9 +742,11 @@ const rootRouteChildren: RootRouteChildren = {
   FounderRoute: FounderRoute,
   OwnerRoute: OwnerRoute,
   PendingRoute: PendingRoute,
+  PrivacyRoute: PrivacyRoute,
   RejectedRoute: RejectedRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   TrialExpiredRoute: TrialExpiredRoute,
   RequestCompanyIdRoute: RequestCompanyIdRoute,
   TrackJobIdRoute: TrackJobIdRoute,
@@ -718,13 +760,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

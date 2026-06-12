@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Truck, Loader2, CheckCircle2 } from "lucide-react";
 import { submitApplication } from "@/lib/applications.functions";
 import { track } from "@/lib/analytics";
+import { PublicFooter } from "@/components/public-footer";
+import { safePublicError } from "@/lib/public-errors";
 import { cn } from "@/lib/utils";
 
 const applyHead = () => ({
@@ -46,6 +48,7 @@ type FormState = {
     | "";
   biggestChallenge: string;
   billingPreference: "Monthly" | "Annual" | "Not sure yet" | "";
+  website: string;
 };
 
 const empty: FormState = {
@@ -60,21 +63,25 @@ const empty: FormState = {
   heardFrom: "",
   biggestChallenge: "",
   billingPreference: "",
+  website: "",
 };
 
 function ApplyPage() {
   const submit = useServerFn(submitApplication);
   const [f, setF] = useState<FormState>(empty);
+  const startedRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    track("signup_started");
-  }, []);
-
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setF((p) => ({ ...p, [k]: v }));
+  }
+
+  function markStarted() {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    track("signup_started");
   }
 
   const attribution = useMemo(() => {
@@ -101,6 +108,7 @@ function ApplyPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    markStarted();
     setError(null);
     if (
       !f.fullName ||
@@ -131,12 +139,19 @@ function ApplyPage() {
           heardFrom: f.heardFrom,
           biggestChallenge: f.biggestChallenge,
           billingPreference: f.billingPreference,
+          honeypot: f.website,
           ...attribution,
         },
       });
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setError(
+        safePublicError(
+          "We couldn't submit your application right now. Please try again in a moment.",
+          err,
+          "[apply] submit failed",
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -154,16 +169,25 @@ function ApplyPage() {
             We've received your application
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Expect to hear from us within 24 hours.
+            Expect to hear from us within 24 hours with next steps if the fit looks right.
           </p>
           <p className="mt-1 text-sm text-muted-foreground">— The Hooked Team</p>
-          <Link
-            to="/auth"
-            className="mt-8 inline-flex items-center rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Back to sign in
-          </Link>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Link
+              to="/auth"
+              className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              Back to sign in
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Back to home
+            </Link>
+          </div>
         </main>
+        <PublicFooter tone="light" />
       </div>
     );
   }
@@ -180,12 +204,35 @@ function ApplyPage() {
             We're onboarding a limited number of tow operators. Tell us about your business
             and we'll be in touch within 24 hours.
           </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            By submitting this form, you agree that Hooked may contact you about your inquiry,
+            demo, or trial. We handle your information according to our{" "}
+            <Link to="/privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </Link>
+            , and submitting this form does not guarantee acceptance or create a contract.
+          </p>
         </div>
 
         <form
           onSubmit={onSubmit}
           className="space-y-5 rounded-xl border border-border bg-surface/60 p-6 sm:p-8"
+          onFocusCapture={markStarted}
+          onPointerDownCapture={markStarted}
         >
+          <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+            <label>
+              Website
+              <input
+                value={f.website}
+                onChange={(e) => set("website", e.target.value)}
+                autoComplete="off"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+            </label>
+          </div>
+
           <Row>
             <Field label="Full name" required>
               <input
@@ -338,9 +385,13 @@ function ApplyPage() {
             Submit application
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            We'll review your application and reply within 24 hours.
+            We'll review your application and reply within 24 hours with next steps if it's a fit.
           </p>
         </form>
+
+        <div className="mt-8">
+          <PublicFooter tone="light" />
+        </div>
       </main>
     </div>
   );
