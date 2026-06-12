@@ -135,6 +135,7 @@ export function mapHistory(r: Row): HistoryJob {
     amount: Number(r.price ?? 0),
     billing: BILLING_MAP[r.payment_status as string] ?? "Pending",
     responseMin: (r.response_minutes as number) ?? 10,
+    durationMin: typeof r.duration_minutes === "number" ? r.duration_minutes : undefined,
     completedAt: new Date(r.completed_at as string).getTime(),
     photos: mapPhotos(r.photos),
     signatureUrl: (r.signature_url as string | null) ?? undefined,

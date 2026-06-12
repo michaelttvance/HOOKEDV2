@@ -87,6 +87,7 @@ export interface HistoryJob {
   amount: number;
   billing: BillingStatus;
   responseMin: number;
+  durationMin?: number;
   completedAt?: number; // ms epoch
   photos?: JobPhoto[];
   signatureUrl?: string;

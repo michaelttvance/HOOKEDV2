@@ -15,11 +15,14 @@ import {
   Wand2,
   Loader2,
   ArrowRight,
+  History,
+  Camera,
+  PenLine,
 } from "lucide-react";
 import { useDispatch } from "../../lib/dispatch-store";
-import type { Driver, Job, JobType, JobPriority, JobStatus } from "../../lib/seed-data";
+import type { Driver, HistoryJob, Job, JobType, JobPriority, JobStatus } from "../../lib/seed-data";
 import { JOB_PRESETS } from "../../lib/seed-data";
-import { JobDetailModal } from "../../components/job-detail-modal";
+import { JobDetailModal, CompletedJobDetailModal, BILLING_STYLE } from "../../components/job-detail-modal";
 import { DispatchMap } from "../../components/dispatch-map";
 import { JobTimeline, STATUS_COLOR } from "../../components/job-timeline";
 import { parseSmartNotes } from "../../lib/ai.functions";
@@ -47,10 +50,13 @@ function relMin(ts: number) {
 }
 
 function DispatchBoard() {
-  const { jobs, drivers, selectedJobId, setSelectedJob, assignJob, bestDriverFor, detailJobId, openJobDetail, backupAlerts, dismissBackup, smsByJob, updateJobStatus } = useDispatch();
+  const { jobs, drivers, selectedJobId, setSelectedJob, assignJob, bestDriverFor, detailJobId, openJobDetail, backupAlerts, dismissBackup, smsByJob, updateJobStatus, history } = useDispatch();
   const [newJobOpen, setNewJobOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<"queue" | "map" | "drivers">("queue");
+  const [completedOpen, setCompletedOpen] = useState(false);
+  const [completedDetailId, setCompletedDetailId] = useState<string | null>(null);
   const detailJob = jobs.find((j) => j.id === detailJobId) ?? null;
+  const completedDetail = history.find((h) => h.id === completedDetailId) ?? null;
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? null;
   const stalled = jobs.filter(
@@ -98,10 +104,16 @@ function DispatchBoard() {
               Work the queue, watch driver readiness, and clear anything that could slow down response time.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <InlineStatusChip label="Assigned" value={assignedCount} tone="default" />
             <InlineStatusChip label="On scene" value={onSceneCount} tone="warning" />
             <InlineStatusChip label="Needs attention" value={stalled.length} tone={stalled.length > 0 ? "urgent" : "default"} />
+            <button
+              onClick={() => setCompletedOpen(true)}
+              className="flex h-7 items-center gap-1.5 rounded-full border border-border px-3 text-[11px] font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground"
+            >
+              <History className="h-3.5 w-3.5" /> Completed jobs ({history.length})
+            </button>
           </div>
         </div>
       </section>
@@ -276,6 +288,16 @@ function DispatchBoard() {
 
       {newJobOpen && <NewJobModal onClose={() => setNewJobOpen(false)} />}
       {detailJob && <JobDetailModal job={detailJob} onClose={() => openJobDetail(null)} />}
+      {completedOpen && (
+        <CompletedJobsPanel
+          history={history}
+          onClose={() => setCompletedOpen(false)}
+          onSelect={(id) => setCompletedDetailId(id)}
+        />
+      )}
+      {completedDetail && (
+        <CompletedJobDetailModal job={completedDetail} onClose={() => setCompletedDetailId(null)} />
+      )}
     </div>
   );
 }
@@ -328,6 +350,92 @@ function SnapshotCard({
       <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
       <div className={cn("mt-1 text-2xl font-semibold tracking-tight", toneClass)}>{value}</div>
       <div className="text-[11px] text-muted-foreground">{detail}</div>
+    </div>
+  );
+}
+
+function CompletedJobsPanel({
+  history,
+  onClose,
+  onSelect,
+}: {
+  history: HistoryJob[];
+  onClose: () => void;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">History</div>
+            <div className="text-lg font-semibold">Completed jobs</div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          {history.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background py-10 text-center">
+              <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
+              <div>
+                <div className="text-sm font-semibold text-foreground">No completed jobs yet</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">Closed jobs will show up here for review.</div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {history.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => onSelect(h.id)}
+                  className="w-full rounded-lg border border-border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-surface-2"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-foreground">{h.caller}</div>
+                      <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                        {h.type} · Driver {h.driver} ·{" "}
+                        {(h.completedAt ? new Date(h.completedAt) : new Date(h.date)).toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {(h.photos?.length ?? 0) > 0 && (
+                        <Camera className="h-3.5 w-3.5 text-muted-foreground" aria-label="Photos attached" />
+                      )}
+                      {(h.signatureUrl || h.signaturePath) && (
+                        <PenLine className="h-3.5 w-3.5 text-success" aria-label="Signature on file" />
+                      )}
+                      <span className="font-mono text-sm font-semibold text-foreground">${h.amount.toFixed(2)}</span>
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                          BILLING_STYLE[h.billing],
+                        )}
+                      >
+                        {h.billing}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
