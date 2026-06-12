@@ -75,6 +75,7 @@ export interface Job {
   publicToken?: string;
   photos?: JobPhoto[];
   signatureUrl?: string;
+  signaturePath?: string;
 }
 
 export interface HistoryJob {
@@ -89,6 +90,7 @@ export interface HistoryJob {
   completedAt?: number; // ms epoch
   photos?: JobPhoto[];
   signatureUrl?: string;
+  signaturePath?: string;
 }
 
 export interface ChatMsg {

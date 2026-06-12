@@ -209,12 +209,13 @@ export async function addJobPhoto(jobId: string, label: string, file: File): Pro
   return photo;
 }
 
-/** Upload a signature PNG and set jobs.signature_url. Returns the legacy public URL. */
+/** Upload a signature PNG and set jobs.signature_url + jobs.signature_path. Returns the legacy public URL. */
 export async function setJobSignature(jobId: string, blob: Blob): Promise<string> {
-  const url = await uploadToBucket(`jobs/${jobId}/signature-${Date.now()}.png`, blob, "image/png");
+  const path = `jobs/${jobId}/signature-${Date.now()}.png`;
+  const url = await uploadToBucket(path, blob, "image/png");
   const { error } = await supabase
     .from("jobs")
-    .update({ signature_url: url } as never)
+    .update({ signature_url: url, signature_path: path } as never)
     .eq("id", jobId);
   if (error) throw error;
   return url;
