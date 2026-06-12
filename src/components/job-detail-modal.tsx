@@ -18,7 +18,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useDispatch } from "../lib/dispatch-store";
 import { generateFollowUp, type FollowUpScenario } from "../lib/ai.functions";
 import { resolveMediaUrl, trackingUrl, useResolvedMediaUrl } from "../lib/media";
-import type { Job, JobStatus } from "../lib/seed-data";
+import type { HistoryJob, Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
 
 type CloseOutcome = "cancelled" | "goa";
@@ -102,7 +102,9 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const [followErr, setFollowErr] = useState<string | null>(null);
   const [followCopied, setFollowCopied] = useState(false);
   const dropoff = job.notes?.match(/Drop-?off:\s*([^—]+)/i)?.[1]?.trim() ?? null;
-  const signatureUrl = resolveMediaUrl(job.signatureUrl);
+  const signatureUrl = resolveMediaUrl(
+    job.signaturePath ? { path: job.signaturePath, url: job.signatureUrl } : job.signatureUrl,
+  );
 
   async function draft(scenario: FollowUpScenario) {
     setFollowScenario(scenario);
@@ -526,6 +528,132 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
               {invoiced ? "Invoice generated" : "Generate Invoice"}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const BILLING_STYLE: Record<HistoryJob["billing"], string> = {
+  Paid: "border-success/40 bg-success/15 text-success",
+  Invoiced: "border-primary/40 bg-primary/15 text-primary",
+  Pending: "border-warning/40 bg-warning/15 text-warning",
+};
+
+export function CompletedJobDetailModal({ job, onClose }: { job: HistoryJob; onClose: () => void }) {
+  const photos = job.photos ?? [];
+  const signatureRef = job.signaturePath
+    ? { path: job.signaturePath, url: job.signatureUrl }
+    : job.signatureUrl;
+  const signatureUrl = useResolvedMediaUrl(signatureRef);
+  const hasProof = photos.length > 0 || !!signatureUrl;
+  const completedDate = job.completedAt ? new Date(job.completedAt) : new Date(job.date);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              Job {job.id.toUpperCase()} · {job.type}
+              <span className="rounded-full border border-success/40 bg-success/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-success">
+                Complete
+              </span>
+            </div>
+            <div className="mt-1 truncate text-xl font-semibold">{job.caller}</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Completed{" "}
+              {completedDate.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} ·{" "}
+              {completedDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+          <Section title="Job summary">
+            <Row icon={Car}>
+              {job.type} <span className="text-muted-foreground">· Driver</span> <b>{job.driver}</b>
+            </Row>
+            <Row icon={Clock}>
+              {job.durationMin != null
+                ? `${job.durationMin} min on job`
+                : `${job.responseMin} min response`}
+            </Row>
+            <Row icon={FileText}>
+              <span className="font-mono font-semibold text-foreground">${job.amount.toFixed(2)}</span>{" "}
+              <span
+                className={cn(
+                  "ml-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                  BILLING_STYLE[job.billing],
+                )}
+              >
+                {job.billing}
+              </span>
+            </Row>
+          </Section>
+
+          <Section
+            title={
+              <span className="flex items-center gap-1.5">
+                <Camera className="h-3.5 w-3.5" /> Proof of service
+              </span>
+            }
+          >
+            {!hasProof ? (
+              <div className="rounded-md border border-dashed border-border bg-background p-3 text-center text-[11px] text-muted-foreground">
+                No proof files were attached to this completed job.
+              </div>
+            ) : (
+              <>
+                {photos.length > 0 && (
+                  <div>
+                    <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Photos ({photos.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {photos.map((p) => (
+                        <PhotoThumb key={p.path ?? p.url ?? `${p.label}-${p.ts}`} photo={p} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {signatureUrl && (
+                  <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/5 p-2">
+                    <PenLine className="h-3.5 w-3.5 shrink-0 text-success" />
+                    <span className="flex-1 text-[11px] text-muted-foreground">Customer signature on file</span>
+                    <img
+                      src={signatureUrl}
+                      alt="Customer signature"
+                      className="h-10 w-24 rounded border border-border bg-background object-contain"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </Section>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 border-t border-border bg-surface-2 px-6 py-4">
+          <button
+            onClick={onClose}
+            className="rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
