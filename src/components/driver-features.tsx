@@ -13,7 +13,7 @@ import {
 import type { Job, JobPhoto, Driver } from "../lib/seed-data";
 import { useDispatch } from "../lib/dispatch-store";
 import { useAuth } from "../lib/use-auth";
-import { addJobPhoto, setJobSignature } from "../lib/media";
+import { addJobPhoto, resolveMediaUrl, setJobSignature } from "../lib/media";
 import { cn } from "../lib/utils";
 
 /* ───────────────────────── Pre/Post Checklist ───────────────────────── */
@@ -153,6 +153,7 @@ function PhotoSlot({
   onCapture: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const previewUrl = resolveMediaUrl(photo);
   return (
     <>
       <input
@@ -181,14 +182,28 @@ function PhotoSlot({
       >
         {photo ? (
           <>
-            <img
-              src={photo.url}
-              alt={label}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[9px] font-semibold text-white">
-              {label} ✓
-            </span>
+            {previewUrl ? (
+              <>
+                {/*
+                  Legacy public URLs still render here today.
+                  When job-media becomes private, this helper will resolve signed URLs instead.
+                */}
+                <img
+                  src={previewUrl}
+                  alt={label}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[9px] font-semibold text-white">
+                  {label} ✓
+                </span>
+              </>
+            ) : (
+              <>
+                <Camera className="h-5 w-5" />
+                <span className="text-[10px] font-semibold leading-tight">{label}</span>
+                <span className="text-[9px]">{uploading ? "Uploading…" : "Tap to capture"}</span>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -287,6 +302,7 @@ export function SignaturePad({ job }: { job: Job }) {
   }
 
   if (signed) {
+    const signatureUrl = resolveMediaUrl(job.signatureUrl);
     return (
       <div className="flex items-center gap-3 rounded-xl border border-success/40 bg-success/10 px-3 py-3 text-sm">
         <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
@@ -294,11 +310,13 @@ export function SignaturePad({ job }: { job: Job }) {
           <div className="font-semibold text-success">Customer signature captured</div>
           <div className="text-[11px] text-muted-foreground">Saved to job record</div>
         </div>
-        <img
-          src={job.signatureUrl}
-          alt="Customer signature"
-          className="h-10 w-24 rounded border border-border bg-background object-contain"
-        />
+        {signatureUrl ? (
+          <img
+            src={signatureUrl}
+            alt="Customer signature"
+            className="h-10 w-24 rounded border border-border bg-background object-contain"
+          />
+        ) : null}
       </div>
     );
   }
