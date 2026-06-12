@@ -104,9 +104,10 @@ export async function addJobPhoto(jobId: string, label: string, file: File): Pro
   const blob = await compressImage(file);
   const ts = Date.now();
   const safeLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  const url = await uploadToBucket(`jobs/${jobId}/${safeLabel}-${ts}.jpg`, blob, "image/jpeg");
+  const path = `jobs/${jobId}/${safeLabel}-${ts}.jpg`;
+  const url = await uploadToBucket(path, blob, "image/jpeg");
 
-  const photo: JobPhoto = { url, label, ts };
+  const photo: JobPhoto = { url, path, label, ts };
 
   // Append to the job's photos array (read-modify-write; jobs are company-scoped via RLS)
   const { data: row, error: readErr } = await supabase

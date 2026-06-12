@@ -42,6 +42,11 @@ export interface Driver {
 
 export interface JobPhoto {
   url: string;
+  /**
+   * Legacy records only stored public URLs.
+   * Future private-media rows can keep the renderable URL and also carry the storage path.
+   */
+  path?: string;
   label: string; // e.g. "Before tow", "After drop-off", "Scene"
   ts: number;
 }
