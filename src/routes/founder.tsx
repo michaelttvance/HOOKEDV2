@@ -33,6 +33,7 @@ import {
   createMarketingCampaign,
   setMarketingCampaignStatus,
 } from "@/lib/owner.functions";
+import { safePublicError } from "@/lib/public-errors";
 import { cn } from "@/lib/utils";
 
 const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
@@ -635,6 +636,20 @@ function CampaignManager({ campaigns }: { campaigns: Campaign[] }) {
       setStatus({ data: vars }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["founder-metrics", "v1"] }),
   });
+  const createCampaignError = createM.error
+    ? safePublicError(
+        "We couldn't save that campaign right now. Please try again in a moment.",
+        createM.error,
+        "[founder] create campaign failed",
+      )
+    : null;
+  const statusCampaignError = statusM.error
+    ? safePublicError(
+        "We couldn't update that campaign right now. Please try again in a moment.",
+        statusM.error,
+        "[founder] update campaign failed",
+      )
+    : null;
 
   async function copy(url: string, id: string) {
     try {
@@ -773,8 +788,8 @@ function CampaignManager({ campaigns }: { campaigns: Campaign[] }) {
           </tbody>
         </table>
       </div>
-      {createM.error && <div className="text-xs text-urgent">{(createM.error as Error).message}</div>}
-      {statusM.error && <div className="text-xs text-urgent">{(statusM.error as Error).message}</div>}
+      {createCampaignError && <div className="text-xs text-urgent">{createCampaignError}</div>}
+      {statusCampaignError && <div className="text-xs text-urgent">{statusCampaignError}</div>}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { MessageSquare, Loader2, Copy } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useDispatch } from "../lib/dispatch-store";
 import { generateFollowUp, type FollowUpScenario } from "../lib/ai.functions";
+import { safePublicError } from "../lib/public-errors";
 import { resolveMediaUrl, trackingUrl, useResolvedMediaUrl } from "../lib/media";
 import type { HistoryJob, Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
@@ -94,7 +95,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     }
   }
 
-  // ── AI follow-up drafting ──
+  // ── Follow-up drafting ──
   const draftFn = useServerFn(generateFollowUp);
   const [followScenario, setFollowScenario] = useState<FollowUpScenario | null>(null);
   const [followText, setFollowText] = useState("");
@@ -130,9 +131,23 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
         },
       });
       if (res.ok) setFollowText(res.message);
-      else setFollowErr(res.error);
+      else {
+        setFollowErr(
+          safePublicError(
+            "We couldn't draft that message right now. Please try again or edit it manually.",
+            res.error,
+            "[job-detail] follow-up draft failed",
+          ),
+        );
+      }
     } catch (e) {
-      setFollowErr(e instanceof Error ? e.message : "Draft failed");
+      setFollowErr(
+        safePublicError(
+          "We couldn't draft that message right now. Please try again or edit it manually.",
+          e,
+          "[job-detail] follow-up draft failed",
+        ),
+      );
     } finally {
       setFollowBusy(false);
     }

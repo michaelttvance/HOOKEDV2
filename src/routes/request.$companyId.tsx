@@ -89,7 +89,13 @@ function RequestPage() {
         setGeoLoading(false);
       },
       (e) => {
-        setErr(e.message || "Could not get location.");
+        setErr(
+          safePublicError(
+            "We couldn't get your location automatically. Please type it in manually.",
+            e,
+            "[request] geolocation failed",
+          ),
+        );
         setGeoLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10_000 },

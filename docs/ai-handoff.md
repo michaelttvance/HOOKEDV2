@@ -11,6 +11,25 @@ Update this file before every Claude/Codex/AI session stops.
 - Current focus is Phase 3 founder/company-owner separation and launch readiness.
 - There is a dirty working tree with both reviewed and unreviewed changes. Do not revert user/other-agent work.
 
+## Launch QA Hardening Pass (2026-06-12)
+
+- Current branch: `feature/launch-qa-hardening-pr17`.
+- Goal: small, safe launch-readiness cleanup only. No workflow, schema, storage, auth, billing, Twilio, or Stripe changes.
+- Reviewed production-facing flows: landing, demo, apply/request, login/auth, dispatcher, driver, completed jobs proof/history, owner, founder, public tracking, and friendly error states.
+- Planned / in progress changes:
+  - soften visible AI-heavy copy on the public landing/app launch pages and email invite text;
+  - replace raw user-facing error text with `safePublicError(...)` fallbacks in the dashboard job parser, job detail follow-up drafting, founder campaign controls, and the public request geolocation fallback;
+  - keep `noindex` / `no-referrer` behavior intact on public request/tracking routes;
+  - update this handoff + change log with launch QA findings and remaining risks.
+- Verification to run after edits:
+  - `npm audit`
+  - `npm run build`
+  - restore `src/routeTree.gen.ts` if build touches it
+- Remaining risks to watch:
+  - demo page still contains a few product-help labels that may be softened further if needed;
+  - public request geolocation still depends on browser permission/location availability;
+  - the `track` helper and public forms remain intentionally fail-silent to protect launch stability.
+
 ## Current Deployment (2026-06-11)
 
 - **PRODUCTION (live):** https://hookedv-2.vercel.app (aliases: `hookedv-2-hookeddispatch-project.vercel.app`, `hookedv-2-git-main-hookeddispatch-project.vercel.app`)

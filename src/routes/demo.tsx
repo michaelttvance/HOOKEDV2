@@ -100,12 +100,12 @@ function DemoPage() {
       panel: <DriverPreview />,
     },
     {
-      id: "ai",
-      title: "Dispatch assist",
+      id: "dispatch-notes",
+      title: "Dispatch notes",
       icon: Sparkles,
-      eyebrow: "Smart dispatch",
+      eyebrow: "Intake help",
       copy:
-        "Turn messy notes into a clean dispatch-ready job and get fast operational suggestions without replacing the dispatcher’s judgment.",
+        "Turn messy notes into a clean dispatch-ready job and surface fast operational suggestions without replacing the dispatcher’s judgment.",
       bullets: [
         "Parse inbound call notes into service type, location, vehicle, and priority",
         "Recommend the best available truck for the job",
@@ -199,7 +199,7 @@ function DemoPage() {
     },
     {
       id: "support",
-      title: "Support assistant",
+      title: "Support desk",
       icon: LifeBuoy,
       eyebrow: "Help flow",
       copy:
@@ -771,7 +771,7 @@ function DriverPreview() {
 
 function AiPreview() {
   return (
-    <PreviewShell title="Dispatch assist">
+    <PreviewShell title="Dispatch notes">
       <div className="space-y-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Messy notes</div>
@@ -943,7 +943,7 @@ function MotorClubPreview() {
 
 function SupportPreview() {
   return (
-    <PreviewShell title="Support assistant">
+    <PreviewShell title="Support desk">
       <div className="space-y-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">

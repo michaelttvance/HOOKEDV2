@@ -604,7 +604,7 @@ function MarketingPage() {
                   {[
                     "Full access to every feature, no limits",
                     "Unlimited dispatchers & drivers",
-                    "Smart dispatch assistant included",
+                    "Dispatch tools included",
                     "Driver mobile app",
                     "Billing, impound & rotations",
                     "Motor club tracking",
@@ -1266,7 +1266,7 @@ function IntegrationStrip() {
     { icon: Receipt, label: "Invoicing" },
     { icon: MessageSquare, label: "SMS updates" },
     { icon: Warehouse, label: "Impound lots" },
-    { icon: Sparkles, label: "Dispatch assistant" },
+    { icon: Sparkles, label: "Dispatch tools" },
   ];
   const row = [...items, ...items];
   return (
@@ -1300,7 +1300,7 @@ function IntegrationStrip() {
 function BentoFeatures() {
   return (
     <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {/* Dispatch assistant feature — prominent card */}
+      {/* Dispatch tools feature — prominent card */}
       <Reveal className="sm:col-span-2 lg:row-span-2">
         <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#FACC15]/20 bg-gradient-to-br from-[#FACC15]/[0.08] to-white/[0.02] p-7">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#FACC15]/10 blur-3xl transition-opacity group-hover:opacity-80" />
@@ -1406,7 +1406,7 @@ function FeatureTabs() {
     },
     {
       id: "ai",
-      label: "Dispatch assist",
+      label: "Dispatch notes",
       icon: Sparkles,
       points: [
         "Closest-driver suggestions at a glance",
@@ -1537,7 +1537,7 @@ function DriverPanel() {
 
 function AiPanel() {
   return (
-    <PanelShell title="Dispatch assist">
+    <PanelShell title="Dispatch notes">
       <div className="space-y-2.5">
         <div className="flex items-start gap-2 rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/[0.06] p-3">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#FACC15]" />

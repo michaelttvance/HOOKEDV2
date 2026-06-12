@@ -13,8 +13,7 @@ const applyHead = () => ({
     { title: "Apply for Hooked Access" },
     {
       name: "description",
-      content:
-        "Apply for early access to Hooked — the AI-powered dispatch platform for tow operators.",
+      content: "Apply for early access to Hooked — the dispatch platform for tow operators.",
     },
     { name: "referrer", content: "no-referrer" },
     { property: "og:title", content: "Apply for Hooked Access" },

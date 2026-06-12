@@ -30,6 +30,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { cn } from "../../lib/utils";
 import { VinLookup } from "../../components/vin-lookup";
 import { OnboardingChecklist } from "../../components/onboarding-checklist";
+import { safePublicError } from "../../lib/public-errors";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -626,7 +627,13 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
     try {
       const res = await parseFn({ data: { text: smartText } });
       if (!res.ok) {
-        setParseErr(res.error);
+        setParseErr(
+          safePublicError(
+            "We couldn't parse those notes right now. Please type the job details manually.",
+            res.error,
+            "[dashboard] smart notes parse failed",
+          ),
+        );
         return;
       }
       const p = res.parsed;
@@ -650,7 +657,13 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
         missing: p.missingInfo ?? [],
       });
     } catch (e: any) {
-      setParseErr(e?.message || "Parse failed");
+      setParseErr(
+        safePublicError(
+          "We couldn't parse those notes right now. Please type the job details manually.",
+          e,
+          "[dashboard] smart notes parse failed",
+        ),
+      );
     } finally {
       setParsing(false);
     }
@@ -710,11 +723,11 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {/* Smart Notes */}
+          {/* Call notes */}
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
             <label className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Smart Notes — describe the call, system fills in the details
+              Call notes — describe the call, and the form fills in the details
             </label>
             <textarea
               value={smartText}
@@ -731,7 +744,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
               className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              {parsing ? "Parsing…" : "Parse & fill form"}
+              {parsing ? "Parsing…" : "Fill form"}
             </button>
 
             {aiResult && (
