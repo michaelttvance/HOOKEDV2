@@ -48,14 +48,32 @@ export const submitApplication = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendEmail, applicationConfirmationEmail, applicationNotificationEmail } =
       await import("./emails.server");
+    const recentCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const normalizedPhone = data.phone.trim().replace(/\s+/g, "");
+
+    const { data: duplicate, error: dupErr } = await supabaseAdmin
+      .from("applications")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .eq("business_name", data.businessName.trim())
+      .eq("phone", normalizedPhone)
+      .eq("city_state", data.cityState.trim())
+      .gte("created_at", recentCutoff)
+      .limit(1)
+      .maybeSingle();
+    if (dupErr) throw dupErr;
+    if (duplicate) {
+      return { ok: true, ignored: true as const };
+    }
 
     const { data: row, error } = await supabaseAdmin
       .from("applications")
       .insert({
         full_name: data.fullName,
         business_name: data.businessName,
-        email: data.email,
-        phone: data.phone,
+        email: normalizedEmail,
+        phone: normalizedPhone,
         city_state: data.cityState,
         truck_count: data.truckCount,
         current_software: data.currentSoftware,

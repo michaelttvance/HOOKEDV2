@@ -8,7 +8,8 @@ import { cn } from "../lib/utils";
 const trackHead = () => ({
   meta: [
     { title: "Track your tow — Hooked" },
-    { name: "robots", content: "noindex" },
+    { name: "robots", content: "noindex, nofollow" },
+    { name: "referrer", content: "no-referrer" },
     { name: "description", content: "Live location and ETA for your tow truck." },
   ],
 });
