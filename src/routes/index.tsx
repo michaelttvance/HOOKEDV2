@@ -313,7 +313,7 @@ function MarketingPage() {
           </Reveal>
           <Reveal delay={300}>
             <p className="mt-4 text-xs text-slate-500">
-              30-day free trial · No credit card required · Live in one business day
+              30-day free trial · No credit card required · Start the same day
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -572,6 +572,9 @@ function MarketingPage() {
                 </Reveal>
               ))}
             </div>
+            <p className="mt-5 text-center text-xs text-slate-500">
+              Testimonials represent composite early-access feedback. Individual results may vary.
+            </p>
           </div>
         </section>
 

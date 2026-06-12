@@ -8,9 +8,36 @@ Update this file before every Claude/Codex/AI session stops.
 - Main repo: `michaelttvance/HOOKEDV2`, branch `main`.
 - App: TanStack Start + Supabase + Tailwind + Vercel.
 - Phase 0 security/repo hygiene was completed earlier.
-- PR #18 (Twilio readiness docs) was merged to main on 2026-06-12.
-- PR #19 (Launch UX polish) branch `feature/launch-ux-polish-pr19` is ready to commit and PR — all edits made, build passed, routeTree.gen.ts restored.
-- Current focus: PR #19 commit and PR creation (see below).
+- PR #18 (Twilio readiness docs) merged to main 2026-06-12.
+- PR #19 (Launch UX polish) merged to main 2026-06-12.
+- PR #20 (Testimonial disclosure + copy) branch `feature/testimonial-disclosure-pr20` is ready to commit and PR — all edits made, build passed, routeTree.gen.ts restored.
+- Current focus: PR #20 commit and PR creation (see below).
+
+## PR #20 — Testimonial Disclosure + Onboarding Copy (2026-06-12, ready to commit)
+
+- Branch: `feature/testimonial-disclosure-pr20` (from clean main after PR #19 merge).
+- Goal: FTC-aligned testimonial disclaimer + hero SLA copy softening. Pure copy changes; no logic, schema, auth, Twilio, billing, or migration changes.
+
+### Files changed
+
+- `src/routes/index.tsx` — (1) added `<p>` disclaimer after testimonial grid: "Testimonials represent composite early-access feedback. Individual results may vary." styled `mt-5 text-center text-xs text-slate-500`; (2) changed hero trial subtext from "Live in one business day" to "Start the same day".
+- `docs/ai-handoff.md` — this update.
+- `docs/change-log.md` — PR #20 entry added.
+
+### Verification
+
+- `npm run build` — PASSED (exit 0, no new errors or warnings).
+- `npm audit` — 0 vulnerabilities.
+- `src/routeTree.gen.ts` was modified by build (pre `98bb98cf`, post `23070fe2`) — restored with `git checkout HEAD -- src/routeTree.gen.ts`.
+- Confirmed: no logic, state, server functions, auth, or data changes in either touched file.
+
+### Risks / Next steps
+
+- Zero logic risk. Landing page copy only.
+- DO NOT commit `src/routeTree.gen.ts`.
+- Suggested commit message: `chore: PR #20 — add testimonial disclosure and soften hero trial copy`
+- After merging: set `RESEND_WEBHOOK_SECRET` in Vercel → Environment Variables (closes inbound-email webhook auth gap — no code change required).
+- Broader launch blocker still open: `job-media` storage bucket is `public = true` in migration — any known URL is accessible without auth. Needs a dedicated migration + signed-URL code PR before broader commercial launch.
 
 ## PR #19 — Launch UX Polish (2026-06-12, ready to commit)
 
