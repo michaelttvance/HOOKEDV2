@@ -31,7 +31,7 @@ function TrialExpiredPage() {
           <h2 className="text-lg font-semibold">Your free trial has ended</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Thanks for trying Hooked! Your 30-day free trial has ended. To keep using your
-            dispatch board, driver app, billing, and AI assistant, reach out and we'll get you
+            dispatch board, driver app, billing, and support tools, reach out and we'll get you
             set up on a plan.
           </p>
           <p className="mt-4 text-sm text-muted-foreground">

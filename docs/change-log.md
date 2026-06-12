@@ -26,6 +26,28 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-12 — Codex Launch QA Hardening Pass
+
+### Goal
+- Review the production-facing launch surfaces for small stability/copy/error hardening before
+  limited initial usage.
+
+### Changed
+- In progress:
+  - soften public app copy that still leaned on AI-heavy language;
+  - replace raw user-facing error strings with friendly fallbacks in the dashboard parser, job detail follow-up drafting, founder campaign controls, and the public request geolocation fallback;
+  - preserve public noindex / no-referrer behavior and avoid any workflow or schema changes;
+  - update launch handoff notes for the next reviewer.
+
+### Verification
+- Pending: `npm audit`
+- Pending: `npm run build`
+- Pending: `git status --porcelain`
+
+### Risks / Follow-Up
+- Any extra wording cleanups should stay limited to launch-facing copy.
+- Do not expand scope into auth, billing, Twilio, storage, migrations, or tracking-token behavior.
+
 ## 2026-06-11 — Codex Analytics Review / Cleanup Pass
 
 ### Goal

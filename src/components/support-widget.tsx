@@ -63,7 +63,7 @@ export function SupportWidget({ userEmail }: { userEmail?: string | null }) {
               type="button"
               onClick={() => setOpen(false)}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label="Close support assistant"
+              aria-label="Close support panel"
             >
               <X className="h-4 w-4" />
             </button>
