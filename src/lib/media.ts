@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import type { JobPhoto } from "./seed-data";
 
 const BUCKET = "job-media";
+const SIGNED_URL_TTL_SECONDS = 60 * 30;
 
 export type MediaReference =
   | string
@@ -21,6 +23,34 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function getReferenceUrl(ref: MediaReference): string | null {
+  if (!ref) return null;
+  if (typeof ref === "string") return ref.trim() || null;
+  if (typeof ref.url === "string" && ref.url.trim().length > 0) return ref.url.trim();
+  if (typeof ref.publicUrl === "string" && ref.publicUrl.trim().length > 0) return ref.publicUrl.trim();
+  return null;
+}
+
+function getLegacyPublicUrl(ref: MediaReference): string | null {
+  const url = getReferenceUrl(ref);
+  return url && isPublicMediaUrl(url) ? url : null;
+}
+
+function getReferencePath(ref: MediaReference): string | null {
+  if (!ref) return null;
+  if (typeof ref === "string") return isStoragePath(ref) ? ref.trim() : null;
+  if (typeof ref.path === "string" && ref.path.trim().length > 0) return ref.path.trim();
+  const url = typeof ref.url === "string" ? ref.url.trim() : "";
+  if (isStoragePath(url)) return url;
+  return null;
+}
+
+function mediaRefKey(ref: MediaReference, bucket = BUCKET): string {
+  const url = getReferenceUrl(ref) ?? "";
+  const path = getReferencePath(ref) ?? "";
+  return `${bucket}:${url}:${path}`;
 }
 
 /** True for legacy public URLs already stored in the DB or returned by uploads. */
@@ -48,22 +78,74 @@ export function resolveMediaUrl(ref: MediaReference, bucket = BUCKET): string | 
     return null;
   }
 
-  const url = typeof ref.url === "string" ? ref.url.trim() : "";
+  const url = getReferenceUrl(ref) ?? "";
   if (url) {
     if (isPublicMediaUrl(url)) return url;
     if (isStoragePath(url)) return supabase.storage.from(bucket).getPublicUrl(url).data.publicUrl;
     return url;
   }
 
-  const path = typeof ref.path === "string" ? ref.path.trim() : "";
+  const path = getReferencePath(ref) ?? "";
   if (path) {
     return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
-  const publicUrl = typeof ref.publicUrl === "string" ? ref.publicUrl.trim() : "";
-  if (publicUrl) return publicUrl;
-
   return null;
+}
+
+/**
+ * Resolve a media reference to a temporary signed URL when we have a storage path.
+ *
+ * Today the bucket is still public, so legacy public URLs continue to work as-is.
+ * Once the bucket flips private, this helper becomes the primary render path for new photos.
+ */
+export async function resolveSignedMediaUrl(
+  ref: MediaReference,
+  bucket = BUCKET,
+  expiresIn = SIGNED_URL_TTL_SECONDS,
+): Promise<string | null> {
+  const path = getReferencePath(ref);
+  if (!path) return resolveMediaUrl(ref, bucket);
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
+  if (!error && data?.signedUrl) return data.signedUrl;
+
+  return getLegacyPublicUrl(ref);
+}
+
+/**
+ * Client hook for authenticated previews.
+ * It starts with any legacy public URL for stability, then upgrades to a signed URL
+ * whenever a storage path is present.
+ */
+export function useResolvedMediaUrl(ref: MediaReference, bucket = BUCKET): string | null {
+  const initialUrl = getLegacyPublicUrl(ref);
+  const path = getReferencePath(ref);
+  const key = mediaRefKey(ref, bucket);
+  const [resolved, setResolved] = useState<string | null>(initialUrl);
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolved(initialUrl ?? null);
+
+    if (!path) {
+      if (!initialUrl) {
+        const legacyFallback = resolveMediaUrl(ref, bucket);
+        if (legacyFallback) setResolved(legacyFallback);
+      }
+      return;
+    }
+
+    void resolveSignedMediaUrl(ref, bucket).then((next) => {
+      if (!cancelled && next) setResolved(next);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bucket, initialUrl, key, path]);
+
+  return resolved;
 }
 
 /** Downscale + JPEG-compress an image client-side so uploads stay small on cell data. */

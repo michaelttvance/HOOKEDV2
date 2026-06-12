@@ -17,7 +17,7 @@ import { MessageSquare, Loader2, Copy } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useDispatch } from "../lib/dispatch-store";
 import { generateFollowUp, type FollowUpScenario } from "../lib/ai.functions";
-import { resolveMediaUrl, trackingUrl } from "../lib/media";
+import { resolveMediaUrl, trackingUrl, useResolvedMediaUrl } from "../lib/media";
 import type { Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
 
@@ -35,6 +35,30 @@ function statusIndex(s: JobStatus): number {
   // Received always reached
   const order: JobStatus[] = ["Unassigned", "Assigned", "EnRoute", "OnScene", "Complete"];
   return order.indexOf(s);
+}
+
+function PhotoThumb({ photo }: { photo: NonNullable<Job["photos"]>[number] }) {
+  const photoUrl = useResolvedMediaUrl(photo);
+  return photoUrl ? (
+    <a
+      href={photoUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group relative h-20 w-20 overflow-hidden rounded-md border border-border"
+      title={`${photo.label} · ${new Date(photo.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+    >
+      {/* Legacy public URLs still render here today.
+          Once job-media is private, this hook upgrades to a signed URL whenever a storage path exists. */}
+      <img src={photoUrl} alt={photo.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+      <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[8px] font-semibold text-white">
+        {photo.label}
+      </span>
+    </a>
+  ) : (
+    <div className="flex h-20 w-20 items-center justify-center rounded-md border border-border bg-background text-[9px] text-muted-foreground">
+      {photo.label}
+    </div>
+  );
 }
 
 export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
@@ -371,33 +395,9 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {jobPhotos.map((p) => {
-                    const photoUrl = resolveMediaUrl(p);
-                    return photoUrl ? (
-                      <a
-                        key={p.url ?? `${p.label}-${p.ts}`}
-                        href={photoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative h-20 w-20 overflow-hidden rounded-md border border-border"
-                        title={`${p.label} · ${new Date(p.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
-                      >
-                        {/* Legacy public URLs still render here today.
-                            When storage becomes private, this resolver will swap to signed URLs. */}
-                        <img src={photoUrl} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                        <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[8px] font-semibold text-white">
-                          {p.label}
-                        </span>
-                      </a>
-                    ) : (
-                      <div
-                        key={p.url ?? `${p.label}-${p.ts}`}
-                        className="flex h-20 w-20 items-center justify-center rounded-md border border-border bg-background text-[9px] text-muted-foreground"
-                      >
-                        {p.label}
-                      </div>
-                    );
-                  })}
+                  {jobPhotos.map((p) => (
+                    <PhotoThumb key={p.path ?? p.url ?? `${p.label}-${p.ts}`} photo={p} />
+                  ))}
                 </div>
               )}
               {signatureUrl && (

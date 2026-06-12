@@ -13,7 +13,7 @@ import {
 import type { Job, JobPhoto, Driver } from "../lib/seed-data";
 import { useDispatch } from "../lib/dispatch-store";
 import { useAuth } from "../lib/use-auth";
-import { addJobPhoto, resolveMediaUrl, setJobSignature } from "../lib/media";
+import { addJobPhoto, resolveMediaUrl, setJobSignature, useResolvedMediaUrl } from "../lib/media";
 import { cn } from "../lib/utils";
 
 /* ───────────────────────── Pre/Post Checklist ───────────────────────── */
@@ -153,7 +153,7 @@ function PhotoSlot({
   onCapture: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const previewUrl = resolveMediaUrl(photo);
+  const previewUrl = useResolvedMediaUrl(photo);
   return (
     <>
       <input
