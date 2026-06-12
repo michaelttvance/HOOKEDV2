@@ -26,6 +26,27 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-12 — PR #20 Testimonial Disclosure + Onboarding Copy
+
+### Goal
+- Tiny legal/customer-trust copy PR: add FTC-aligned testimonial disclaimer under the landing-page testimonial grid and soften the hero trial subtext to remove a concrete SLA claim. No workflow, schema, auth, Twilio, billing, or migration changes.
+
+### Changed
+- `src/routes/index.tsx`: (1) added disclaimer paragraph after testimonial grid — "Testimonials represent composite early-access feedback. Individual results may vary."; (2) changed hero subtext from "30-day free trial · No credit card required · Live in one business day" to "30-day free trial · No credit card required · Start the same day".
+- `docs/ai-handoff.md`: updated with PR #20 state.
+- `docs/change-log.md`: this entry.
+
+### Verification
+- `npm run build` — PASSED (exit 0, all pre-existing warnings only).
+- `npm audit` — 0 vulnerabilities.
+- `src/routeTree.gen.ts` modified by build; restored with `git checkout HEAD -- src/routeTree.gen.ts`.
+- Both changes are pure copy — no logic, state, data, or component structure altered.
+
+### Risks / Follow-Up
+- Zero logic risk — copy-only changes to the public landing page.
+- Remaining broader-launch blockers (from audit): `job-media` storage bucket is public (needs private + signed URLs), SMS STOP instructions missing from Twilio templates, Terms/Privacy need named processors and liability clauses.
+- Recommended next task: set `RESEND_WEBHOOK_SECRET` in Vercel env vars (closes inbound-email webhook auth gap), then address `job-media` bucket visibility as a dedicated migration PR.
+
 ## 2026-06-12 — PR #19 Launch UX Polish
 
 ### Goal
