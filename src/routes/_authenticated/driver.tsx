@@ -299,9 +299,9 @@ function JobScreen({ job, driver }: { job: Job; driver: Driver | null }) {
         </div>
       )}
 
-      <RequestBackupButton job={job} />
+      <SignaturePad job={job} />
 
-      {job.status === "OnScene" && <SignaturePad job={job} />}
+      <RequestBackupButton job={job} />
 
       <div>
         <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">

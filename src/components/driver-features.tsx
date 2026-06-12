@@ -302,28 +302,32 @@ export function SignaturePad({ job }: { job: Job }) {
   }
 
   if (signed) {
-    const signatureUrl = resolveMediaUrl(job.signatureUrl);
+    const signatureUrl = resolveMediaUrl(
+      job.signaturePath ? { path: job.signaturePath, url: job.signatureUrl } : job.signatureUrl,
+    );
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-success/40 bg-success/10 px-3 py-3 text-sm">
-        <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
-        <div className="flex-1">
-          <div className="font-semibold text-success">Customer signature captured</div>
-          <div className="text-[11px] text-muted-foreground">Saved to job record</div>
+      <div className="rounded-xl border border-success/40 bg-success/10 p-3">
+        <div className="flex items-center gap-3 text-sm">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
+          <div className="flex-1">
+            <div className="font-semibold text-success">Signature saved</div>
+            <div className="text-[11px] text-muted-foreground">Saved to job record</div>
+          </div>
+          {signatureUrl ? (
+            <img
+              src={signatureUrl}
+              alt="Customer signature"
+              className="h-10 w-24 rounded border border-border bg-background object-contain"
+            />
+          ) : null}
         </div>
-        {signatureUrl ? (
-          <img
-            src={signatureUrl}
-            alt="Customer signature"
-            className="h-10 w-24 rounded border border-border bg-background object-contain"
-          />
-        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-3">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="rounded-xl border border-primary/30 bg-surface p-3">
+      <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           <PenLine className="h-3 w-3" /> Customer signature
         </div>
@@ -335,6 +339,9 @@ export function SignaturePad({ job }: { job: Job }) {
           <RotateCcw className="h-3 w-3" /> Clear
         </button>
       </div>
+      <p className="mb-2 text-[11px] leading-snug text-muted-foreground">
+        Ask the customer to sign below before completing the job.
+      </p>
       <div className="overflow-hidden rounded-md border border-dashed border-border bg-background">
         <canvas
           ref={canvasRef}
@@ -351,8 +358,11 @@ export function SignaturePad({ job }: { job: Job }) {
         onClick={save}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.99] disabled:opacity-60"
       >
-        <CheckCircle2 className="h-4 w-4" /> {saving ? "Saving…" : "Capture signature"}
+        <CheckCircle2 className="h-4 w-4" /> {saving ? "Saving…" : "Save signature"}
       </button>
+      <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+        Signature is optional for now, but recommended before completion.
+      </p>
       {error && <div className="mt-1.5 text-[11px] text-urgent">{error}</div>}
     </div>
   );
