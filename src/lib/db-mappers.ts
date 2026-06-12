@@ -100,6 +100,7 @@ export function mapJob(r: Row): Job {
     publicToken: (r.public_token as string) ?? "",
     photos: mapPhotos(r.photos),
     signatureUrl: (r.signature_url as string | null) ?? undefined,
+    signaturePath: (r.signature_path as string | null) ?? undefined,
   };
 }
 
@@ -137,6 +138,7 @@ export function mapHistory(r: Row): HistoryJob {
     completedAt: new Date(r.completed_at as string).getTime(),
     photos: mapPhotos(r.photos),
     signatureUrl: (r.signature_url as string | null) ?? undefined,
+    signaturePath: (r.signature_path as string | null) ?? undefined,
   };
 }
 
