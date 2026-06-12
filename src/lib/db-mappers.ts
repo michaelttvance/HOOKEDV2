@@ -105,9 +105,22 @@ export function mapJob(r: Row): Job {
 
 function mapPhotos(raw: unknown): JobPhoto[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter(
-    (p): p is JobPhoto => !!p && typeof p === "object" && typeof (p as JobPhoto).url === "string",
-  );
+  return raw.flatMap((p): JobPhoto[] => {
+    if (!p || typeof p !== "object") return [];
+    const row = p as Record<string, unknown>;
+    const label = typeof row.label === "string" ? row.label : "";
+    if (!label) return [];
+    const ts = typeof row.ts === "number" ? row.ts : Date.now();
+    // Legacy rows store a public URL here today; future private-media rows can store a path/key
+    // in the same slot and still render through the compatibility helper in `src/lib/media.ts`.
+    const url = typeof row.url === "string" && row.url.trim().length > 0
+      ? row.url.trim()
+      : typeof row.path === "string" && row.path.trim().length > 0
+        ? row.path.trim()
+        : "";
+    if (!url) return [];
+    return [{ url, label, ts }];
+  });
 }
 
 export function mapHistory(r: Row): HistoryJob {

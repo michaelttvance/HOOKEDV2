@@ -17,7 +17,7 @@ import { MessageSquare, Loader2, Copy } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useDispatch } from "../lib/dispatch-store";
 import { generateFollowUp, type FollowUpScenario } from "../lib/ai.functions";
-import { trackingUrl } from "../lib/media";
+import { resolveMediaUrl, trackingUrl } from "../lib/media";
 import type { Job, JobStatus } from "../lib/seed-data";
 import { cn } from "../lib/utils";
 
@@ -78,6 +78,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const [followErr, setFollowErr] = useState<string | null>(null);
   const [followCopied, setFollowCopied] = useState(false);
   const dropoff = job.notes?.match(/Drop-?off:\s*([^—]+)/i)?.[1]?.trim() ?? null;
+  const signatureUrl = resolveMediaUrl(job.signatureUrl);
 
   async function draft(scenario: FollowUpScenario) {
     setFollowScenario(scenario);
@@ -370,28 +371,40 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {jobPhotos.map((p) => (
-                    <a
-                      key={p.url}
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative h-20 w-20 overflow-hidden rounded-md border border-border"
-                      title={`${p.label} · ${new Date(p.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
-                    >
-                      <img src={p.url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                      <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[8px] font-semibold text-white">
+                  {jobPhotos.map((p) => {
+                    const photoUrl = resolveMediaUrl(p);
+                    return photoUrl ? (
+                      <a
+                        key={p.url ?? `${p.label}-${p.ts}`}
+                        href={photoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative h-20 w-20 overflow-hidden rounded-md border border-border"
+                        title={`${p.label} · ${new Date(p.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                      >
+                        {/* Legacy public URLs still render here today.
+                            When storage becomes private, this resolver will swap to signed URLs. */}
+                        <img src={photoUrl} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                        <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-[8px] font-semibold text-white">
+                          {p.label}
+                        </span>
+                      </a>
+                    ) : (
+                      <div
+                        key={p.url ?? `${p.label}-${p.ts}`}
+                        className="flex h-20 w-20 items-center justify-center rounded-md border border-border bg-background text-[9px] text-muted-foreground"
+                      >
                         {p.label}
-                      </span>
-                    </a>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              {job.signatureUrl && (
+              {signatureUrl && (
                 <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/5 p-2">
                   <PenLine className="h-3.5 w-3.5 shrink-0 text-success" />
                   <span className="flex-1 text-[11px] text-muted-foreground">Customer signature on file</span>
-                  <img src={job.signatureUrl} alt="Signature" className="h-8 w-20 rounded border border-border bg-background object-contain" />
+                  <img src={signatureUrl} alt="Signature" className="h-8 w-20 rounded border border-border bg-background object-contain" />
                 </div>
               )}
             </Section>
