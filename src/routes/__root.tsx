@@ -36,7 +36,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Something broke</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We ran into a problem loading this page. Please refresh or contact support if it keeps
+          happening.
+        </p>
         <button
           onClick={() => { router.invalidate(); reset(); }}
           className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
@@ -54,6 +57,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "google-site-verification", content: "SEo7VBJ6uF-n6OXv-vY_pK1tdQEsO_CD3o-0HLlwDWg" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
       { title: "Hooked — AI Tow Dispatch" },
       { name: "description", content: "Modern AI-powered tow truck dispatch board, driver app, and billing in one place." },
       { property: "og:title", content: "Hooked — AI Tow Dispatch" },

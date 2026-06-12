@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { track } from "@/lib/analytics";
+import { PublicFooter } from "@/components/public-footer";
 import {
   Truck,
   Sparkles,
@@ -41,8 +42,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
-const COPYRIGHT_YEAR = 2026;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -685,25 +684,15 @@ function MarketingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 px-4 py-10 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FACC15]">
-              <Truck className="h-4 w-4 text-black" />
-            </div>
-            <span className="text-sm font-bold tracking-tight text-white">Hooked</span>
-          </div>
-          <p className="text-xs text-slate-500">
-            © {COPYRIGHT_YEAR} Hooked. All rights reserved.
-          </p>
-          <div className="flex items-center gap-5 text-xs text-slate-500">
-            <a href="#features" className="hover:text-slate-300">Features</a>
-            <a href="#pricing" className="hover:text-slate-300">Pricing</a>
-            <Link to="/apply" className="hover:text-slate-300">Apply</Link>
-            <Link to="/auth" className="hover:text-slate-300">Sign in</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter
+        tone="dark"
+        links={[
+          { label: "Features", href: "#features" },
+          { label: "Pricing", href: "#pricing" },
+          { label: "Apply", to: "/apply" },
+          { label: "Sign in", to: "/auth" },
+        ]}
+      />
     </div>
   );
 }

@@ -35,11 +35,16 @@ const ApplicationInput = z.object({
   utmContent: z.string().trim().max(200).optional().or(z.literal("")),
   landingPath: z.string().trim().max(500).optional().or(z.literal("")),
   referrer: z.string().trim().max(1000).optional().or(z.literal("")),
+  honeypot: z.string().trim().max(120).optional().or(z.literal("")),
 });
 
 export const submitApplication = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ApplicationInput.parse(d))
   .handler(async ({ data }) => {
+    if (data.honeypot && data.honeypot.trim()) {
+      return { ok: true, ignored: true as const };
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendEmail, applicationConfirmationEmail, applicationNotificationEmail } =
       await import("./emails.server");

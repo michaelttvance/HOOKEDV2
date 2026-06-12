@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { track } from "@/lib/analytics";
+import { PublicFooter } from "@/components/public-footer";
 import {
   ArrowRight,
   BarChart3,
@@ -566,6 +567,7 @@ function DemoPage() {
           </div>
         </section>
       </main>
+      <PublicFooter tone="dark" />
     </div>
   );
 }

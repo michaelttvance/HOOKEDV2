@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { notifyAdminOfSignup } from "@/lib/approval.functions";
 import { cn } from "../lib/utils";
 import { oauth } from "@/integrations/oauth";
+import { safePublicError } from "@/lib/public-errors";
 
 
 type AuthSearch = { redirect?: string; token?: string; email?: string; mode?: "signin" | "signup" };
@@ -89,7 +90,7 @@ function AuthPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(safePublicError("We couldn't complete that sign-in right now. Please try again.", err, "[auth] submit failed"));
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ function AuthPage() {
       if (result.redirected) return;
       navigate({ to: search.redirect ?? "/dashboard", replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(safePublicError("We couldn't start Google sign-in right now. Please try again.", err, "[auth] oauth failed"));
       setLoading(false);
     }
   }

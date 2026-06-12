@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { safePublicError } from "@/lib/public-errors";
 
 const forgotPasswordHead = () => ({
   meta: [
@@ -33,7 +34,7 @@ function ForgotPasswordPage() {
       if (error) throw error;
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(safePublicError("We couldn't send a reset link right now. Please try again.", err, "[forgot-password] reset failed"));
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { safePublicError } from "@/lib/public-errors";
 
 const resetPasswordHead = () => ({
   meta: [
@@ -63,7 +64,7 @@ function ResetPasswordPage() {
       // Sign out so user can sign in with the new password
       await supabase.auth.signOut();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(safePublicError("We couldn't update your password right now. Please try again.", err, "[reset-password] update failed"));
     } finally {
       setLoading(false);
     }

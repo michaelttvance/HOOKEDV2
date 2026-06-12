@@ -1,8 +1,12 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Truck, MapPin, Loader2, CheckCircle2, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import type { JobType } from "../lib/seed-data";
+import { submitPublicRequest } from "@/lib/public-request.functions";
+import { PublicFooter } from "@/components/public-footer";
+import { safePublicError } from "@/lib/public-errors";
 
 const requestHead = ({ params }: { params: { companyId: string } }) => ({
   meta: [
@@ -12,6 +16,7 @@ const requestHead = ({ params }: { params: { companyId: string } }) => ({
       content: "Request roadside or tow service. A driver will be assigned shortly.",
     },
     { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
+    { name: "robots", content: "noindex, nofollow" },
     { property: "og:title", content: "Request Tow Service — Hooked" },
     {
       property: "og:description",
@@ -37,6 +42,7 @@ const SERVICE_TYPES: { value: JobType; label: string }[] = [
 
 function RequestPage() {
   const { companyId } = Route.useParams();
+  const submitRequest = useServerFn(submitPublicRequest);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [loadingCo, setLoadingCo] = useState(true);
   const [name, setName] = useState("");
@@ -47,6 +53,7 @@ function RequestPage() {
   const [model, setModel] = useState("");
   const [type, setType] = useState<JobType | "Other">("Tow");
   const [notes, setNotes] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -97,22 +104,29 @@ function RequestPage() {
     }
     setSubmitting(true);
     try {
-      const dbType: JobType = type === "Other" ? "Tow" : type;
-      const { error } = await (supabase.rpc as any)("create_public_job", {
-        _company_id: companyId,
-        _customer_name: name.trim().slice(0, 120),
-        _customer_phone: phone.trim().slice(0, 40),
-        _location: location.trim().slice(0, 300),
-        _vehicle_year: year ? Number(year) || null : null,
-        _vehicle_make: make.trim() || null,
-        _vehicle_model: model.trim() || null,
-        _job_type: dbType,
-        _notes: type === "Other" ? `Other: ${notes}`.slice(0, 600) : notes.trim().slice(0, 600),
+      await submitRequest({
+        data: {
+          companyId,
+          name: name.trim(),
+          phone: phone.trim(),
+          location: location.trim(),
+          year: year ? Number(year) || null : null,
+          make: make.trim() || null,
+          model: model.trim() || null,
+          type,
+          notes: type === "Other" ? `Other: ${notes}`.slice(0, 600) : notes.trim().slice(0, 600),
+          honeypot,
+        },
       });
-      if (error) throw error;
       setSubmitted(true);
     } catch (e: any) {
-      setErr(e?.message || "Could not submit. Please try again.");
+      setErr(
+        safePublicError(
+          "We couldn't send your request right now. Please try again in a moment.",
+          e,
+          "[request] submit failed",
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -128,12 +142,17 @@ function RequestPage() {
 
   if (!companyName) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-sm text-center">
-          <h1 className="text-xl font-semibold">Link not found</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This request link is invalid or has been disabled.
-          </p>
+      <div className="flex min-h-screen flex-col bg-background px-4 py-10 text-foreground">
+        <div className="flex flex-1 items-center justify-center">
+          <div className="max-w-sm text-center">
+            <h1 className="text-xl font-semibold">Link not found</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This request link is invalid or has been disabled.
+            </p>
+          </div>
+        </div>
+        <div className="mx-auto mt-8 w-full max-w-md">
+          <PublicFooter tone="light" />
         </div>
       </div>
     );
@@ -147,12 +166,19 @@ function RequestPage() {
           <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
           <h2 className="mt-3 text-lg font-semibold">Request received</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Hi {name.split(" ")[0]}, we got it. {companyName} dispatch will assign a driver shortly
-            and text you at {phone}.
+            Hi {name.split(" ")[0]}, we got it. {companyName} dispatch will review the request,
+            assign a driver shortly, and contact you at {phone} if needed.
           </p>
           <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Phone className="h-3.5 w-3.5" /> Keep your phone nearby
           </div>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            If {companyName} uses text updates for this request, message and data rates may apply.
+            Reply STOP to opt out of automated texts if they are enabled.
+          </p>
+        </div>
+        <div className="mx-auto mt-8 w-full max-w-md">
+          <PublicFooter tone="light" />
         </div>
       </div>
     );
@@ -166,7 +192,36 @@ function RequestPage() {
         onSubmit={submit}
         className="mx-auto mt-8 w-full max-w-md space-y-4 rounded-xl border border-border bg-surface p-5"
       >
+        <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+          <label>
+            Website
+            <input
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          </label>
+        </div>
+
         <h2 className="text-base font-semibold">Tell us what you need</h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          By sending this request, you agree {companyName} may contact you about service updates
+          or dispatch follow-up related to this job. Please avoid sharing sensitive personal
+          information in the notes field.
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          See our{" "}
+          <Link to="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>{" "}
+          for more details on how we handle request data.
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          If {companyName} uses SMS to confirm or update this request, message and data rates may
+          apply and you can reply STOP to opt out of automated texts.
+        </p>
 
         <Field label="Full name">
           <input
@@ -305,6 +360,9 @@ function RequestPage() {
           box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
         }
       `}</style>
+      <div className="mx-auto mt-8 w-full max-w-md">
+        <PublicFooter tone="light" />
+      </div>
     </div>
   );
 }
