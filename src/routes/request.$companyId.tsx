@@ -17,6 +17,7 @@ const requestHead = ({ params }: { params: { companyId: string } }) => ({
     },
     { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
     { name: "robots", content: "noindex, nofollow" },
+    { name: "referrer", content: "no-referrer" },
     { property: "og:title", content: "Request Tow Service — Hooked" },
     {
       property: "og:description",

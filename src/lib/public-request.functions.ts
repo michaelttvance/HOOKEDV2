@@ -25,11 +25,28 @@ export const submitPublicRequest = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const jobType = data.type === "Other" ? "Tow" : data.type;
+    const recentCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const normalizedPhone = data.phone.trim().replace(/\s+/g, "");
+
+    const { data: duplicate, error: dupErr } = await supabaseAdmin
+      .from("jobs")
+      .select("id")
+      .eq("company_id", data.companyId)
+      .eq("customer_phone", normalizedPhone)
+      .eq("location", data.location.trim())
+      .eq("job_type", jobType)
+      .gte("created_at", recentCutoff)
+      .limit(1)
+      .maybeSingle();
+    if (dupErr) throw dupErr;
+    if (duplicate) {
+      return { ok: true, ignored: true as const };
+    }
 
     const { error } = await supabaseAdmin.rpc("create_public_job", {
       _company_id: data.companyId,
       _customer_name: data.name.trim().slice(0, 120),
-      _customer_phone: data.phone.trim().slice(0, 40),
+      _customer_phone: normalizedPhone.slice(0, 40),
       _location: data.location.trim().slice(0, 300),
       _vehicle_year: data.year ?? null,
       _vehicle_make: data.make?.trim() || null,
@@ -40,4 +57,3 @@ export const submitPublicRequest = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
-
