@@ -180,7 +180,7 @@ function SignupsTab() {
 
       {!isLoading && profiles.length === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground shadow-sm">
-          No {filter === "pending" ? "pending" : ""} signups.
+          {filter === "pending" ? "No pending signups — all caught up." : "No signups yet."}
         </div>
       )}
 

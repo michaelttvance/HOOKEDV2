@@ -222,7 +222,7 @@ function DispatchBoard() {
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Live map</div>
               <div className="text-sm font-semibold">Fleet position and customer ETAs</div>
-              <div className="text-[11px] text-muted-foreground">Bay Area view with live driver availability and urgent calls</div>
+              <div className="text-[11px] text-muted-foreground">Live driver availability, urgent alerts, and customer ETAs</div>
             </div>
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <LegendDot color="success" label="Available" />

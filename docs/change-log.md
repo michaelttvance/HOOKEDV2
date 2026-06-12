@@ -26,6 +26,27 @@ Future Claude/Codex/AI agents should update this after each work session.
 - Recommended next task.
 ```
 
+## 2026-06-12 — PR #19 Launch UX Polish
+
+### Goal
+- Small, safe UI/UX copy and empty-state improvements across the dispatcher dashboard, driver app, and admin page — no workflow, schema, auth, Twilio, billing, or migration changes.
+
+### Changed
+- `src/routes/_authenticated/dashboard.tsx`: removed hardcoded "Bay Area" location string from live map subtitle. Now reads "Live driver availability, urgent alerts, and customer ETAs".
+- `src/routes/_authenticated/driver.tsx`: (1) removed internal VAPID configuration warning that was visible on driver screens when the `VITE_VAPID_PUBLIC_KEY` env var was unset — drivers should never see server config messages; (2) simplified DriverQuickActions workflow hint from a verbose 30-word sentence to a concise, action-oriented version.
+- `src/routes/admin.tsx`: improved empty-state copy in SignupsTab from terse `"No pending signups."` to `"No pending signups — all caught up."` / `"No signups yet."`.
+- `docs/ai-handoff.md`: updated with PR #19 state, changed files, verification results, and next steps.
+- `docs/change-log.md`: this entry.
+
+### Verification
+- `npm run build` — PASSED (exit 0, 6.35s, zero new errors or warnings beyond pre-existing non-blocking deprecations).
+- `src/routeTree.gen.ts` was modified by build; restored with `git checkout -- src/routeTree.gen.ts` (pre-build hash `98bb98cf` confirmed restored).
+
+### Risks / Follow-Up
+- No logic, auth, data, schema, or Twilio changes — very low risk.
+- Twilio SMS still requires A2P 10DLC registration or toll-free number swap before messages reliably deliver to customers (Twilio error 30034 on 10DLC unregistered number).
+- Recommended next task: commit PR #19, open PR, merge, then address Twilio carrier registration as a separate manual step.
+
 ## 2026-06-12 — Codex Launch QA Hardening Pass
 
 ### Goal
