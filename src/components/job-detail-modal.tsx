@@ -150,8 +150,8 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     const label = outcome === "goa" ? "Mark GOA" : "Cancel job";
     const details =
       outcome === "goa"
-        ? "This will release the driver, close the job, and remove it from the active board."
-        : "This will release the driver, close the job, and remove it from the active board.";
+        ? "Gone on arrival — the driver was dispatched but the customer was not at the location. The driver will be released and the job will be closed."
+        : "This will cancel the job before service is complete. Any assigned driver will be released and the job will be closed.";
     if (!window.confirm(`${label} for ${job.caller}?\n\n${details}`)) return;
     const ok = await closeJob(job.id, outcome);
     if (ok !== false) onClose();
@@ -264,7 +264,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
               <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-xs">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <div className="flex-1">
-                  <div className="font-semibold text-primary">AI suggests {suggestion.name}</div>
+                  <div className="font-semibold text-primary">Best match: {suggestion.name}</div>
                   <div className="text-[11px] text-muted-foreground">
                     Truck {suggestion.truck} · {suggestion.distanceMi} mi out
                   </div>
@@ -434,7 +434,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
 
             <Section title={
               <span className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" /> AI follow-up
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Follow-up messages
               </span>
             }>
               <div className="flex flex-wrap gap-1.5">

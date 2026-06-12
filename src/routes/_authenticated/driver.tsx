@@ -374,7 +374,7 @@ function DriverQuickActions({
         )}
       >
         <Share2 className="mb-1 h-4 w-4" />
-        Send tracker
+        Share ETA link
       </a>
       <a
         href={`mailto:support@hookaidashboard.com?subject=${encodeURIComponent("Driver app help")}&body=${supportBody}`}

@@ -32,9 +32,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dispatch Board — Hooked" },
-      { name: "description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
+      { name: "description", content: "Live tow dispatch board with driver assignment, SLA alerts, and real-time fleet visibility." },
       { property: "og:title", content: "Dispatch Board — Hooked" },
-      { property: "og:description", content: "Live tow dispatch board with AI driver matching and SLA alerts." },
+      { property: "og:description", content: "Live tow dispatch board with driver assignment, SLA alerts, and real-time fleet visibility." },
       { property: "og:url", content: "https://hookaidashboard.com/dashboard" },
     ],
   }),
@@ -170,20 +170,36 @@ function DispatchBoard() {
             </button>
           </header>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
-            {jobs.map((j) => (
-              <JobCard
-                key={j.id}
-                job={j}
-                driver={drivers.find((d) => d.id === j.assignedDriverId)}
-                selected={j.id === selectedJobId}
-                smsCount={smsByJob[j.id]?.length ?? 0}
-                onSetStatus={(s) => updateJobStatus(j.id, s)}
-                onClick={() => {
-                  setSelectedJob(j.id);
-                  openJobDetail(j.id);
-                }}
-              />
-            ))}
+            {jobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-background py-10 text-center">
+                <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Queue is clear</div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">No active jobs right now — add one to get started.</div>
+                </div>
+                <button
+                  onClick={() => setNewJobOpen(true)}
+                  className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add first job
+                </button>
+              </div>
+            ) : (
+              jobs.map((j) => (
+                <JobCard
+                  key={j.id}
+                  job={j}
+                  driver={drivers.find((d) => d.id === j.assignedDriverId)}
+                  selected={j.id === selectedJobId}
+                  smsCount={smsByJob[j.id]?.length ?? 0}
+                  onSetStatus={(s) => updateJobStatus(j.id, s)}
+                  onClick={() => {
+                    setSelectedJob(j.id);
+                    openJobDetail(j.id);
+                  }}
+                />
+              ))
+            )}
           </div>
         </section>
 
@@ -590,7 +606,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
             <label className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Smart Notes — describe everything, AI fills it in
+              Smart Notes — describe the call, system fills in the details
             </label>
             <textarea
               value={smartText}
@@ -607,7 +623,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
               className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              Parse with AI
+              {parsing ? "Parsing…" : "Parse & fill form"}
             </button>
 
             {aiResult && (
