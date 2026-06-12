@@ -29,17 +29,17 @@ import {
 
 const demoHead = () => ({
   meta: [
-    { title: "Hooked Demo — Dispatch, Driver App, Billing, and AI" },
+    { title: "Hooked Demo — Dispatch, Driver App, Billing & More" },
     {
       name: "description",
       content:
         "Watch how Hooked works for towing company owners, dispatchers, and drivers with a guided product walkthrough.",
     },
-    { property: "og:title", content: "Hooked Demo — Dispatch, Driver App, Billing, and AI" },
+    { property: "og:title", content: "Hooked Demo — Dispatch, Driver App, Billing & More" },
     {
       property: "og:description",
       content:
-        "A guided product walkthrough for tow operators covering dispatch, driver workflow, tracking, billing, impound, and AI.",
+        "A guided product walkthrough for tow operators covering dispatch, driver workflow, customer tracking, billing, and impound.",
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: "https://hookaidashboard.com/demo" },
@@ -101,9 +101,9 @@ function DemoPage() {
     },
     {
       id: "ai",
-      title: "AI dispatch assistant",
+      title: "Dispatch assist",
       icon: Sparkles,
-      eyebrow: "AI layer",
+      eyebrow: "Smart dispatch",
       copy:
         "Turn messy notes into a clean dispatch-ready job and get fast operational suggestions without replacing the dispatcher’s judgment.",
       bullets: [
@@ -316,7 +316,7 @@ function DemoPage() {
                 <div className="mt-5 grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
                   <div className="space-y-3">
                     {[
-                      ["AI parsed call", "F-150, flat tire, I-24 exit 8", "Ready"],
+                      ["Parsed job", "F-150, flat tire, I-24 exit 8", "Ready"],
                       ["Closest truck", "Maya R. - 8 min ETA", "Assign"],
                       ["Customer link", "Tracking text queued", "Send"],
                     ].map(([label, detail, action]) => (
@@ -771,7 +771,7 @@ function DriverPreview() {
 
 function AiPreview() {
   return (
-    <PreviewShell title="AI assistant">
+    <PreviewShell title="Dispatch assist">
       <div className="space-y-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Messy notes</div>
