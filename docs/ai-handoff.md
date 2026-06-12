@@ -8,8 +8,33 @@ Update this file before every Claude/Codex/AI session stops.
 - Main repo: `michaelttvance/HOOKEDV2`, branch `main`.
 - App: TanStack Start + Supabase + Tailwind + Vercel.
 - Phase 0 security/repo hygiene was completed earlier.
-- Current focus is Phase 3 founder/company-owner separation and launch readiness.
-- There is a dirty working tree with both reviewed and unreviewed changes. Do not revert user/other-agent work.
+- PR #18 (Twilio readiness docs) was merged to main on 2026-06-12.
+- PR #19 (Launch UX polish) branch `feature/launch-ux-polish-pr19` is ready to commit and PR — all edits made, build passed, routeTree.gen.ts restored.
+- Current focus: PR #19 commit and PR creation (see below).
+
+## PR #19 — Launch UX Polish (2026-06-12, ready to commit)
+
+- Branch: `feature/launch-ux-polish-pr19` (from clean main after PR #18 merge).
+- Goal: UI/UX copy and empty-state improvements only. No schema, auth, Twilio, payments, migrations, or new packages touched.
+
+### Files changed
+
+- `src/routes/_authenticated/dashboard.tsx` — removed hardcoded "Bay Area" from live map subtitle; now reads "Live driver availability, urgent alerts, and customer ETAs".
+- `src/routes/_authenticated/driver.tsx` — (1) removed internal VAPID config warning that was leaking to driver screens when VAPID env var was unset; (2) simplified DriverQuickActions workflow hint copy to be more action-oriented.
+- `src/routes/admin.tsx` — improved empty-state message in SignupsTab from terse `"No pending signups."` to friendlier `"No pending signups — all caught up."` / `"No signups yet."`.
+- `docs/ai-handoff.md` — this update.
+- `docs/change-log.md` — PR #19 entry added.
+
+### Verification
+
+- `npm run build` — PASSED (exit 0, 6.35s, no new errors or warnings).
+- `src/routeTree.gen.ts` was modified by build (pre `98bb98cf`, post `23070fe2`) — restored with `git checkout -- src/routeTree.gen.ts`.
+- All four changed source files were targeted, single-line or small-block edits; no logic or data changes.
+
+### Risks / Next steps
+
+- No auth, schema, Twilio, billing, migrations, or structural changes in this PR.
+- Next recommended task: commit PR #19, create PR, get review/merge, then proceed to Twilio A2P 10DLC registration or toll-free number swap (needed before SMS reliably delivers to customers — see separate handoff notes below).
 
 ## Launch QA Hardening Pass (2026-06-12)
 

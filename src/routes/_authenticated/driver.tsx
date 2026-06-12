@@ -389,8 +389,7 @@ function DriverQuickActions({
           {checklistDone ? "Pre-trip checklist complete" : "Complete checklist before rolling"}
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-          The driver screen is ordered by the job flow: review details, navigate, send the tracking
-          link, update status, capture proof, and finish the tow.
+          Follow the job flow top to bottom: check details, navigate to the pickup, update your status, capture photos and signature, then complete the job.
         </p>
       </div>
     </div>
@@ -540,9 +539,6 @@ function PushAlertsCard() {
           </button>
         )}
       </div>
-      {!publicKey && (
-        <div className="mt-2 text-[11px] text-warning">Push alerts need VAPID keys configured.</div>
-      )}
     </div>
   );
 }
