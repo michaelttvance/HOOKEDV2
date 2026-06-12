@@ -118,8 +118,9 @@ function mapPhotos(raw: unknown): JobPhoto[] {
       : typeof row.path === "string" && row.path.trim().length > 0
         ? row.path.trim()
         : "";
+    const path = typeof row.path === "string" && row.path.trim().length > 0 ? row.path.trim() : undefined;
     if (!url) return [];
-    return [{ url, label, ts }];
+    return [{ url, path, label, ts }];
   });
 }
 
