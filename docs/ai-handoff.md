@@ -30,6 +30,70 @@ Update this file before every Claude/Codex/AI session stops.
   - public request geolocation still depends on browser permission/location availability;
   - the `track` helper and public forms remain intentionally fail-silent to protect launch stability.
 
+## Live Production Smoke Test Results (2026-06-12)
+
+Full browser smoke test against https://hookedv-2.vercel.app using a temporary test account (dispatcher role) and a dedicated Driver Smoke Test account (driver role).
+
+| Section | Result | Notes |
+|---|---|---|
+| Public pages (`/`, `/demo`, `/apply`, `/track/:id`) | ✅ PASS | All load correctly; tracking page media-free as expected |
+| Auth / login | ✅ PASS | Email/password and session handling work |
+| Dashboard / dispatch board | ✅ PASS | Job queue, map, driver assignment all functional |
+| Job completion workflow | ✅ PASS | Job progresses through all statuses to complete |
+| Completed jobs proof/history | ✅ PASS | Completed job records visible with correct proof |
+| Public tracking link | ✅ PASS | `/track/:id` loads and shows job status; stays media-free |
+| Driver app (`/driver`) | ✅ PASS | Loads for driver-role accounts; redirects admin accounts (correct) |
+| Signature capture | ✅ PASS | Canvas draw triggers auto-save; no explicit button press required |
+| Signature preview | ✅ PASS | Saved signature visible in job detail |
+| Console during job completion | ⚠️ WARNING | `SMS send failed Error: Twilio is not configured` — non-blocking, see below |
+
+**SMS warning (non-blocking):** The `"SMS send failed"` console error appears when a job is completed because `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` are not set in Vercel. The job completion succeeded. The `sms_messages` row was written to Supabase with `status: "failed"`. No UI error was shown.
+
+**Overall verdict:** Core app passes for limited/invite-only launch. SMS requires env var setup before broader launch (customers expect tracking-link SMS on assignment).
+
+---
+
+## Twilio Status SMS — Setup Checklist (action required before broader launch)
+
+All three vars must be added in Vercel → Project Settings → Environment Variables:
+
+```
+TWILIO_ACCOUNT_SID     =  ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN      =  [your auth token]
+TWILIO_PHONE_NUMBER    =  +1XXXXXXXXXX   (E.164 format)
+```
+
+Scope each var to **Production** (and optionally **Preview** for SMS testing in preview deploys).
+
+After adding vars:
+1. Trigger a new Vercel deployment (vars only apply to new deploys).
+2. Assign a test job to a driver with a real customer phone number.
+3. Mark the job through all statuses (assigned → on scene → complete).
+4. Verify three SMS messages arrive.
+5. Confirm all three `sms_messages` rows show `status: "sent"` in Supabase.
+
+**Trial account note:** If using a Twilio trial account, the destination phone number must be verified in the Twilio console first. Upgrade to paid before real customer traffic.
+
+---
+
+## ⚠️ CRITICAL: Do Not Enable Twilio Inbound Webhooks Yet
+
+The following routes are live in production but must NOT be pointed at from the Twilio console:
+
+- `https://hookedv-2.vercel.app/api/public/twilio-voice`
+- `https://hookedv-2.vercel.app/api/public/twilio-voice-status`
+- `https://hookedv-2.vercel.app/api/public/twilio-sms`
+
+These will return 500 errors because the required DB objects do not exist in the live database:
+
+- `companies.twilio_number` (column — missing)
+- `companies.forward_phone` (column — missing)
+- `missed_calls` (table — missing)
+
+Do not configure these webhook URLs in Twilio until a dedicated migration PR adds all three DB objects. See `docs/open-decisions.md` Decision #1b.
+
+---
+
 ## Current Deployment (2026-06-11)
 
 - **PRODUCTION (live):** https://hookedv-2.vercel.app (aliases: `hookedv-2-hookeddispatch-project.vercel.app`, `hookedv-2-git-main-hookeddispatch-project.vercel.app`)
