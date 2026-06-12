@@ -104,7 +104,8 @@ function FounderCommandCenter() {
         )}
         {error && (
           <div className="rounded-xl border border-urgent/20 bg-urgent/10 p-4 text-sm text-urgent">
-            {(error as Error).message}
+            <div className="font-semibold">Unable to load founder metrics</div>
+            <div className="mt-1 text-xs text-urgent/80">Try refreshing the page. If this persists, check the server logs.</div>
           </div>
         )}
         {data && <FounderDashboard data={data} />}
