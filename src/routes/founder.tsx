@@ -38,7 +38,7 @@ import { safePublicError } from "@/lib/public-errors";
 import { cn } from "@/lib/utils";
 import { OWNER_SYSTEM_STATUS } from "@/lib/owner-system-status";
 
-const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com", "michaelthomasvance@gmail.com"];
 
 const founderHead = () => ({
   meta: [{ title: "Founder Command Center — Hooked" }, { name: "robots", content: "noindex" }],
