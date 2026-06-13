@@ -10,6 +10,7 @@ import {
   Building2,
   CheckCircle2,
   Clock,
+  Cpu,
   DollarSign,
   FlaskConical,
   Gauge,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/owner.functions";
 import { safePublicError } from "@/lib/public-errors";
 import { cn } from "@/lib/utils";
+import { OWNER_SYSTEM_STATUS } from "@/lib/owner-system-status";
 
 const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
 
@@ -64,6 +66,7 @@ function FounderCommandCenter() {
     queryFn: () => metricsFn(),
     refetchInterval: 60_000,
   });
+  const [activeTab, setActiveTab] = useState<"dashboard" | "system">("dashboard");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -95,21 +98,52 @@ function FounderCommandCenter() {
             </Link>
           </div>
         </div>
+        <div className="mx-auto mt-3 max-w-7xl border-t border-border/50 pt-3">
+          <nav className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                activeTab === "dashboard"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" /> Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab("system")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                activeTab === "system"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Cpu className="h-3.5 w-3.5" /> System Command Center
+            </button>
+          </nav>
+        </div>
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-        {isLoading && (
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground shadow-sm">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading founder metrics…
-          </div>
+        {activeTab === "dashboard" && (
+          <>
+            {isLoading && (
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground shadow-sm">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading founder metrics…
+              </div>
+            )}
+            {error && (
+              <div className="rounded-xl border border-urgent/20 bg-urgent/10 p-4 text-sm text-urgent">
+                <div className="font-semibold">Unable to load founder metrics</div>
+                <div className="mt-1 text-xs text-urgent/80">Try refreshing the page. If this persists, check the server logs.</div>
+              </div>
+            )}
+            {data && <FounderDashboard data={data} />}
+          </>
         )}
-        {error && (
-          <div className="rounded-xl border border-urgent/20 bg-urgent/10 p-4 text-sm text-urgent">
-            <div className="font-semibold">Unable to load founder metrics</div>
-            <div className="mt-1 text-xs text-urgent/80">Try refreshing the page. If this persists, check the server logs.</div>
-          </div>
-        )}
-        {data && <FounderDashboard data={data} />}
+        {activeTab === "system" && <SystemCommandCenterPanel />}
       </main>
     </div>
   );
@@ -1100,4 +1134,223 @@ function date(value: string) {
 function safeNumber(value: unknown) {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+function SystemCommandCenterPanel() {
+  const s = OWNER_SYSTEM_STATUS;
+
+  const buildCls = (status: string) => {
+    if (status === "Live") return "bg-success/15 text-success";
+    if (status === "In Progress") return "bg-primary/10 text-primary";
+    if (status === "Stub") return "bg-warning/10 text-warning";
+    return "bg-surface-2 text-muted-foreground";
+  };
+
+  const integrationCls = (status: string) => {
+    if (status === "Integrated") return "bg-success/15 text-success";
+    if (status === "Partial") return "bg-primary/10 text-primary";
+    if (status === "Blocked") return "bg-urgent/15 text-urgent";
+    return "bg-surface-2 text-muted-foreground";
+  };
+
+  const auditCls = (status: string) => {
+    if (status === "Ready") return "bg-success/15 text-success";
+    if (status === "High Priority") return "bg-urgent/15 text-urgent";
+    if (status === "Needs Review") return "bg-warning/10 text-warning";
+    if (status === "Blocked") return "bg-urgent/15 text-urgent";
+    return "bg-surface-2 text-muted-foreground";
+  };
+
+  const priorityCls = (p: string) => {
+    if (p === "P0") return "bg-urgent/15 text-urgent";
+    if (p === "P1") return "bg-primary/10 text-primary";
+    if (p === "P2") return "bg-warning/10 text-warning";
+    return "bg-surface-2 text-muted-foreground";
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-primary">
+            <Cpu className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold">System Command Center</div>
+            <div className="text-xs text-muted-foreground">Owner-only project snapshot — plain English, no secrets</div>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Last updated: <span className="font-semibold text-foreground">{s.lastUpdated}</span>
+        </div>
+      </div>
+
+      {/* Workflow summary */}
+      <div>
+        <SectionHeading icon={Gauge} title="Product Summary" sub="What Hooked does and where it stands" />
+        <p className="mt-3 rounded-xl border border-border bg-surface p-4 text-sm leading-relaxed text-foreground">
+          {s.workflowSummary}
+        </p>
+      </div>
+
+      {/* Product workflow map */}
+      <div>
+        <SectionHeading icon={LineChart} title="Core Dispatch Workflow" sub="Step-by-step how a job moves through the system" />
+        <div className="mt-3 space-y-3">
+          {s.productWorkflowMap.map((step) => (
+            <div
+              key={step.step}
+              className="flex gap-4 rounded-xl border border-border bg-surface p-4"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted-foreground">
+                {step.step}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold">{step.label}</span>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", buildCls(step.status))}>
+                    {step.status}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Frontend routes */}
+      <div>
+        <SectionHeading icon={BarChart3} title="Frontend Pages" sub="Every route and its current build state" />
+        <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="px-4 py-3 font-semibold">Path</th>
+                <th className="px-4 py-3 font-semibold">Page</th>
+                <th className="px-4 py-3 font-semibold">Description</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {s.frontendMap.map((r) => (
+                <tr key={r.path} className="hover:bg-accent/30">
+                  <td className="px-4 py-3 font-mono text-muted-foreground">{r.path}</td>
+                  <td className="px-4 py-3 font-semibold text-foreground">{r.label}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.description}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn("rounded-full px-2 py-0.5 font-bold uppercase tracking-wider", buildCls(r.status))}>
+                      {r.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Backend services */}
+      <div>
+        <SectionHeading icon={ShieldCheck} title="Backend Services & Integrations" sub="What's wired up and what still needs work" />
+        <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="px-4 py-3 font-semibold">Service</th>
+                <th className="px-4 py-3 font-semibold">Purpose</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {s.backendMap.map((svc) => (
+                <tr key={svc.name} className="hover:bg-accent/30">
+                  <td className="px-4 py-3 font-semibold text-foreground">{svc.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{svc.purpose}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn("rounded-full px-2 py-0.5 font-bold uppercase tracking-wider", integrationCls(svc.status))}>
+                      {svc.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Security audit */}
+      <div>
+        <SectionHeading icon={AlertTriangle} title="Security Audit Items" sub="Known areas to review before go-live" />
+        <div className="mt-3 space-y-2">
+          {s.securityAuditItems.map((item, i) => (
+            <div key={i} className="flex gap-3 rounded-xl border border-border bg-surface p-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{item.area}</span>
+                  <span className="text-xs font-semibold text-foreground">— {item.item}</span>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", auditCls(item.status))}>
+                    {item.status}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommended focus */}
+      <div>
+        <SectionHeading icon={Rocket} title="Recommended Focus" sub="What to work on next, in priority order" />
+        <div className="mt-3 space-y-2">
+          {s.recommendedFocus.map((item, i) => (
+            <div key={i} className="flex gap-3 rounded-xl border border-border bg-surface p-4">
+              <span className={cn("mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider h-fit", priorityCls(item.priority))}>
+                {item.priority}
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-foreground">{item.task}</div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.why}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Claude workflow notes */}
+      <div>
+        <SectionHeading icon={Sparkles} title="AI Session Notes" sub="What the last Claude session worked on and what to avoid" />
+        <div className="mt-3 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-success">Worked On</div>
+            <ul className="space-y-1.5">
+              {s.claudeWorkflowNotes.workedOn.map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-urgent">Do Not Touch</div>
+            <ul className="space-y-1.5">
+              {s.claudeWorkflowNotes.doNotTouch.map((item, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-urgent" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">Next Step</div>
+            <p className="text-xs leading-relaxed text-foreground">{s.claudeWorkflowNotes.nextStep}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
