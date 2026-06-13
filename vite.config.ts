@@ -19,7 +19,7 @@ export default defineConfig({
       },
     }),
     tanstackStart({ server: { entry: "server" } }),
-    nitro({ config: { preset: "vercel" } }),
-    react({ fastRefresh: false }),
+    (nitro as any)({ config: { preset: "vercel" } }),
+    react(),
   ],
 });

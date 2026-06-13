@@ -236,7 +236,7 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
   });
 
   const drivers = driversQ.data ?? [];
-  const jobs = jobsQ.data ?? [];
+  const jobs: Job[] = jobsQ.data ?? [];
   const history = historyQ.data ?? [];
 
   const defaultTemplates: SmsTemplates = {
