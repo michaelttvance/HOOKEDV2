@@ -21,7 +21,7 @@ All agents operating in the Hooked Agent Operating System. Each agent has a defi
 - Create and update `docs/` files.
 - Create GitHub issues and PR descriptions.
 - Read any part of the codebase for context.
-- Open branches for documentation work.
+- Open branches for documentation work only. Never open product or feature branches.
 
 **Forbidden from:**
 - Writing product code directly.
