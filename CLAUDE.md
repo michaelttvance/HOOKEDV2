@@ -7,6 +7,20 @@
 - Stack: TanStack Start (file-based routing, React 19) + Supabase (Postgres/Auth/RLS) + Tailwind v4 + Vercel.
 - Package manager: **bun** (`bun install`, `bun run dev`, `bun run build`, `bun run lint`, `bun run format`).
 
+## Claude Code Operating Rules
+
+- **Working directory:** Always work from `/Users/michaelvance/Downloads/HookAi V2/extracted_project`. Never work from the outer `/Users/michaelvance/Downloads/HookAi V2` wrapper repo — it is not the real project.
+- **Branches:** Never push directly to `main`. Always work on a feature or chore branch.
+- **Staging:** Never run `git add .` — always stage files by explicit path.
+- **Production:** Never deploy to production unless the user explicitly approves it for that session.
+- **Secrets:** Never read, log, commit, or expose `.env` files or any API keys.
+- **Supabase CLI:** Never run `supabase link`, `supabase db push`, or any remote Supabase CLI command without explicit per-session approval.
+- **Off-limits without explicit scope:** auth config, RLS policies, migrations, billing, Stripe, Twilio, storage config, public tracking/analytics, and generated route/type files.
+- **Route tree:** `src/routeTree.gen.ts` is auto-generated. If it changes unintentionally during a build, restore it immediately with `git checkout HEAD -- src/routeTree.gen.ts`. Never commit unintentional route tree changes.
+- **Pre-merge:** Run `npm audit` and `npm run build` (or `bun run build`) before recommending a branch for merge. Restore route tree if the build changed it.
+- **Risky changes:** Stop and ask before any destructive or hard-to-reverse operation (force push, reset --hard, schema change, RLS edit, migration, branch deletion, etc.).
+- **Commit hygiene:** Show the diff summary and explicit file list before every commit. One clean commit per completed task.
+
 ## Repo status
 
 - This directory is the **real application repo** — git origin `https://github.com/michaelttvance/HOOKEDV2.git`, branch `main`. All app development happens here.
