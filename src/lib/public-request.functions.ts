@@ -53,7 +53,7 @@ export const submitPublicRequest = createServerFn({ method: "POST" })
       _vehicle_model: data.model?.trim() || null,
       _job_type: jobType,
       _notes: data.notes?.trim() || null,
-    });
+    } as any);
     if (error) throw error;
     return { ok: true as const };
   });
