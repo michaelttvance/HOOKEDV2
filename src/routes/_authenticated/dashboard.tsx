@@ -205,7 +205,13 @@ function DispatchBoard() {
                   driver={drivers.find((d) => d.id === j.assignedDriverId)}
                   selected={j.id === selectedJobId}
                   smsCount={smsByJob[j.id]?.length ?? 0}
-                  onSetStatus={(s) => updateJobStatus(j.id, s)}
+                  onSetStatus={async (s) => {
+                    try {
+                      await updateJobStatus(j.id, s);
+                    } catch {
+                      // error already logged in dispatch store; prevent propagation to error boundary
+                    }
+                  }}
                   onClick={() => {
                     setSelectedJob(j.id);
                     openJobDetail(j.id);
