@@ -106,7 +106,7 @@ interface DispatchState {
   activeDriverJobId: string | null;
   setSelectedJob: (id: string | null) => void;
   openJobDetail: (id: string | null) => void;
-  assignJob: (jobId: string, driverId: string) => Promise<void> | void;
+  assignJob: (jobId: string, driverId: string) => Promise<{ error: string | null }>;
   createJob: (input: NewJobInput) => Promise<Job | null>;
   addDriver: (input: NewDriverInput) => Promise<Driver | null>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void> | void;
@@ -395,11 +395,11 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
 
   // ───────────── mutations ─────────────
   const assignJob = useCallback(
-    async (jobId: string, driverId: string) => {
+    async (jobId: string, driverId: string): Promise<{ error: string | null }> => {
       const driver = drivers.find((d) => d.id === driverId);
       const job = jobs.find((j) => j.id === jobId);
       const etaMin = driver ? Math.max(5, Math.round(driver.distanceMi * 3)) : 10;
-      await Promise.all([
+      const [jobRes, driverRes] = await Promise.all([
         supabase
           .from("jobs")
           .update({ assigned_driver_id: driverId, status: "assigned", assigned_at: new Date().toISOString() } as any)
@@ -409,6 +409,11 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
           .update({ status: "en_route", eta_min: etaMin, current_job_id: jobId })
           .eq("id", driverId),
       ]);
+      if (jobRes.error || driverRes.error) {
+        const msg = jobRes.error?.message ?? driverRes.error?.message ?? "Assignment failed";
+        console.error("assignJob error", jobRes.error ?? driverRes.error);
+        return { error: msg };
+      }
       // Queue assigned SMS (with live tracking link)
       if (job && driver && job.phone) {
         let body = renderTemplate(smsTemplates.assigned, {
@@ -427,6 +432,7 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
       notifyNewJob({ data: { jobId } }).catch((err) => console.error("push notify failed", err));
       qc.invalidateQueries({ queryKey: ["jobs", companyId] });
       qc.invalidateQueries({ queryKey: ["drivers", companyId] });
+      return { error: null };
     },
     [drivers, jobs, qc, companyId, smsTemplates, companyName, renderTemplate, enqueueSms, notifyNewJob],
   );
@@ -507,7 +513,10 @@ export function DispatchProvider({ children }: { children: ReactNode }) {
           await enqueueSms(jobId, "complete", body, j.phone);
         }
         const { error } = await supabase.rpc("complete_job", { _job_id: jobId });
-        if (error) console.error("complete_job error", error);
+        if (error) {
+          console.error("complete_job error", error);
+          throw new Error(error.message ?? "Failed to complete job");
+        }
         qc.invalidateQueries({ queryKey: ["jobs", companyId] });
         qc.invalidateQueries({ queryKey: ["drivers", companyId] });
         qc.invalidateQueries({ queryKey: ["completed_jobs", companyId] });

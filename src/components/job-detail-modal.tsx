@@ -69,8 +69,6 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     bestDriverFor,
     updateJobStatus,
     closeJob,
-    invoiceHistory,
-    history,
     smsByJob,
     companyName,
     googleReviewUrl,
@@ -79,7 +77,6 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const suggestion = job.status === "Unassigned" ? bestDriverFor(job.id) : null;
   const smsLog = smsByJob[job.id] ?? [];
   const [notes, setNotes] = useState(job.notes ?? "");
-  const [invoiced, setInvoiced] = useState(false);
   const jobPhotos = job.photos ?? [];
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -169,24 +166,6 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     if (k === "Received") return true;
     return statusIndex(k as JobStatus) <= idx;
   };
-
-  function genInvoice() {
-    // archive into history as Invoiced
-    const id = `h-inv-${job.id}-${Date.now()}`;
-    history.unshift({
-      id,
-      date: new Date().toISOString().slice(0, 10),
-      caller: job.caller,
-      type: job.type,
-      driver: driver?.name ?? "—",
-      amount: job.estPrice,
-      billing: "Pending",
-      responseMin: Math.max(5, Math.round((Date.now() - job.receivedAt) / 60000)),
-      completedAt: Date.now(),
-    });
-    invoiceHistory(id);
-    setInvoiced(true);
-  }
 
   async function closeWithConfirm(outcome: CloseOutcome) {
     const label = outcome === "goa" ? "Mark GOA" : "Cancel job";
@@ -534,14 +513,10 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
             >
               Close
             </button>
-            <button
-              onClick={genInvoice}
-              disabled={invoiced}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:bg-primary/90 disabled:opacity-60"
-            >
+            <div className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-muted-foreground opacity-60 cursor-not-allowed select-none">
               <FileText className="h-4 w-4" />
-              {invoiced ? "Invoice generated" : "Generate Invoice"}
-            </button>
+              Invoice generation not enabled yet
+            </div>
           </div>
         </div>
       </div>
