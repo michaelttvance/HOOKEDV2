@@ -8,7 +8,7 @@ How work moves from Founder idea to production, and which agents are involved at
 
 ```mermaid
 flowchart TD
-    Michael(["👤 Michael\nFounder / Final Decision Maker"])
+    MichaelTop(["👤 Michael\nFounder / Final Decision Maker"])
 
     subgraph Executive["Executive Layer"]
         CEO["CEO Agent\nProduct & Coordination"]
@@ -31,7 +31,9 @@ flowchart TD
         Prod["Production\nVercel Main"]
     end
 
-    Michael -->|"Idea or direction"| CEO
+    MichaelApprove(["👤 Michael\nApproval Gate"])
+
+    MichaelTop -->|"Idea or direction"| CEO
     CEO -->|"Scoped task"| CTO
     CEO -->|"Billing review"| CFO
     CEO -->|"Copy / growth review"| CMO
@@ -54,15 +56,17 @@ flowchart TD
     QA -->|"Fail → returns to"| FE
     QA -->|"Fail → returns to"| BE
 
-    CTO -->|"Approved"| Michael
+    CTO -->|"Approved"| MichaelApprove
     CTO -->|"Changes needed"| FE
     CTO -->|"Changes needed"| BE
 
-    Michael -->|"Approves PR"| Preview
-    Preview -->|"Verified"| Michael
-    Michael -->|"Merge approved"| Prod
+    MichaelApprove -->|"Approves PR"| Preview
+    MichaelApprove -->|"Changes needed"| FE
+    Preview -->|"Verified"| Prod
+    Preview -->|"Issues found"| FE
 
-    style Michael fill:#1a1a2e,color:#fff,stroke:#4a9eff
+    style MichaelTop fill:#1a1a2e,color:#fff,stroke:#4a9eff
+    style MichaelApprove fill:#1a1a2e,color:#fff,stroke:#4a9eff
     style Prod fill:#0d4f2f,color:#fff,stroke:#22c55e
     style Preview fill:#2d3748,color:#fff,stroke:#f59e0b
 ```

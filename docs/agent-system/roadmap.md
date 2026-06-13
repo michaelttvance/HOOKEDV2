@@ -42,7 +42,10 @@ First 10 tasks required before commercial launch. Ordered by priority and depend
 **Status:** Not started
 **Owner:** Frontend Agent + Backend Agent
 **Risk:** Low — non-blocking for build but increases tech debt
-**Description:** Fix known TS errors in `dispatch-store.tsx`, `public-request.functions.ts`, and `vite.config.ts`. See `project_hooked.md` for line references.
+**Description:** Fix known TS errors in the following files:
+- `src/lib/dispatch-store.tsx` — implicit `any` on several lambda params (lines ~323–614)
+- `src/lib/public-request.functions.ts` — `null` not assignable to `number`/`string` (lines ~51–55)
+- `vite.config.ts` — unknown properties `config` and `fastRefresh` on Nitro plugin types
 **Acceptance criteria:** `bun run typecheck` passes with zero errors.
 **Founder approval required:** No.
 
