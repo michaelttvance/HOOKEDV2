@@ -48,7 +48,7 @@ const FEE_LABELS: Record<keyof PricingConfig["fees"], string> = {
 function SettingsPage() {
   const { smsTemplates, updateSmsTemplates, pricing, updatePricing, companyName, googleReviewUrl, updateGoogleReviewUrl } = useDispatch();
   const { profile, user } = useAuth();
-  const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+  const FOUNDER_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com", "michaelthomasvance@gmail.com"];
   const isFounder = FOUNDER_EMAILS.includes((user?.email ?? "").toLowerCase());
   const [draft, setDraft] = useState<SmsTemplates>(smsTemplates);
   const [saving, setSaving] = useState(false);

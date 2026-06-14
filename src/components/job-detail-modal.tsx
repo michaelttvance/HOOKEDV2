@@ -79,6 +79,7 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const [notes, setNotes] = useState(job.notes ?? "");
   const jobPhotos = job.photos ?? [];
   const [linkCopied, setLinkCopied] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function copyTrackingLink() {
     if (!job.publicToken) return;
@@ -291,7 +292,10 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                   </div>
                 </div>
                 <button
-                  onClick={() => assignJob(job.id, suggestion.id)}
+                  onClick={async () => {
+                    const r = await assignJob(job.id, suggestion.id);
+                    if (r.error) setActionError(r.error);
+                  }}
                   className="rounded-md bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   Assign
@@ -338,13 +342,22 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                   {(["EnRoute", "OnScene", "Complete"] as JobStatus[]).map((s) => (
                     <button
                       key={s}
-                      onClick={() => updateJobStatus(job.id, s)}
+                      onClick={async () => {
+                        try {
+                          await updateJobStatus(job.id, s);
+                        } catch (e) {
+                          setActionError(e instanceof Error ? e.message : "Status update failed — please try again.");
+                        }
+                      }}
                       className="rounded-md border border-border bg-background px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:border-primary hover:text-primary"
                     >
                       Mark {s === "EnRoute" ? "En Route" : s === "OnScene" ? "On Scene" : "Complete"}
                     </button>
                   ))}
                 </div>
+              )}
+              {actionError && (
+                <div className="mt-2 text-[11px] text-urgent">{actionError}</div>
               )}
               <div className="mt-3 rounded-md border border-border bg-background p-3">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
