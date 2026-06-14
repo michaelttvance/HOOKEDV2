@@ -205,7 +205,13 @@ function DispatchBoard() {
                   driver={drivers.find((d) => d.id === j.assignedDriverId)}
                   selected={j.id === selectedJobId}
                   smsCount={smsByJob[j.id]?.length ?? 0}
-                  onSetStatus={(s) => updateJobStatus(j.id, s)}
+                  onSetStatus={async (s) => {
+                    try {
+                      await updateJobStatus(j.id, s);
+                    } catch {
+                      // error already logged in dispatch store; prevent propagation to error boundary
+                    }
+                  }}
                   onClick={() => {
                     setSelectedJob(j.id);
                     openJobDetail(j.id);
@@ -614,6 +620,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
     missing: string[];
   } | null>(null);
   const [assignPickerJob, setAssignPickerJob] = useState<{ id: string } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const preset = JOB_PRESETS[type];
   // Estimate comes from the company's own pricing settings (base service rate),
@@ -671,6 +678,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
 
   async function save(autoAssign: boolean) {
     if (!form.caller || !form.location) return;
+    setSaveError(null);
     const vehicle = [form.year, form.make, form.model].filter(Boolean).join(" ");
     const notes = [form.dropoff ? `Drop-off: ${form.dropoff}` : "", form.notes]
       .filter(Boolean)
@@ -685,7 +693,7 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
       priority,
     });
     if (!job) {
-      onClose();
+      setSaveError("Job could not be saved. Check your connection and try again.");
       return;
     }
     if (autoAssign) {
@@ -702,7 +710,12 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
         drivers={drivers}
         onClose={onClose}
         onAssign={async (driverId) => {
-          await assignJob(assignPickerJob.id, driverId);
+          const result = await assignJob(assignPickerJob.id, driverId);
+          if (result.error) {
+            setSaveError(result.error);
+            setAssignPickerJob(null);
+            return;
+          }
           onClose();
         }}
       />
@@ -868,23 +881,31 @@ function NewJobModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface p-3">
-          <button
-            type="button"
-            onClick={() => save(false)}
-            disabled={!form.caller || !form.location}
-            className="rounded-lg border border-border px-3 py-3 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
-          >
-            Save & Assign Later
-          </button>
-          <button
-            type="button"
-            onClick={() => save(true)}
-            disabled={!form.caller || !form.location}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            <CheckCircle2 className="h-4 w-4" /> Save & Assign Now
-          </button>
+        <div className="border-t border-border bg-surface p-3">
+          {saveError && (
+            <div className="mb-2 flex items-center gap-2 rounded-md border border-urgent/40 bg-urgent/10 px-3 py-2 text-xs text-urgent">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {saveError}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => save(false)}
+              disabled={!form.caller || !form.location}
+              className="rounded-lg border border-border px-3 py-3 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
+            >
+              Save & Assign Later
+            </button>
+            <button
+              type="button"
+              onClick={() => save(true)}
+              disabled={!form.caller || !form.location}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <CheckCircle2 className="h-4 w-4" /> Save & Assign Now
+            </button>
+          </div>
         </div>
       </div>
     </div>

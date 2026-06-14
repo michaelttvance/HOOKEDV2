@@ -69,8 +69,6 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     bestDriverFor,
     updateJobStatus,
     closeJob,
-    invoiceHistory,
-    history,
     smsByJob,
     companyName,
     googleReviewUrl,
@@ -79,9 +77,9 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
   const suggestion = job.status === "Unassigned" ? bestDriverFor(job.id) : null;
   const smsLog = smsByJob[job.id] ?? [];
   const [notes, setNotes] = useState(job.notes ?? "");
-  const [invoiced, setInvoiced] = useState(false);
   const jobPhotos = job.photos ?? [];
   const [linkCopied, setLinkCopied] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function copyTrackingLink() {
     if (!job.publicToken) return;
@@ -169,24 +167,6 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
     if (k === "Received") return true;
     return statusIndex(k as JobStatus) <= idx;
   };
-
-  function genInvoice() {
-    // archive into history as Invoiced
-    const id = `h-inv-${job.id}-${Date.now()}`;
-    history.unshift({
-      id,
-      date: new Date().toISOString().slice(0, 10),
-      caller: job.caller,
-      type: job.type,
-      driver: driver?.name ?? "—",
-      amount: job.estPrice,
-      billing: "Pending",
-      responseMin: Math.max(5, Math.round((Date.now() - job.receivedAt) / 60000)),
-      completedAt: Date.now(),
-    });
-    invoiceHistory(id);
-    setInvoiced(true);
-  }
 
   async function closeWithConfirm(outcome: CloseOutcome) {
     const label = outcome === "goa" ? "Mark GOA" : "Cancel job";
@@ -312,7 +292,10 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                   </div>
                 </div>
                 <button
-                  onClick={() => assignJob(job.id, suggestion.id)}
+                  onClick={async () => {
+                    const r = await assignJob(job.id, suggestion.id);
+                    if (r.error) setActionError(r.error);
+                  }}
                   className="rounded-md bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
                 >
                   Assign
@@ -359,13 +342,22 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
                   {(["EnRoute", "OnScene", "Complete"] as JobStatus[]).map((s) => (
                     <button
                       key={s}
-                      onClick={() => updateJobStatus(job.id, s)}
+                      onClick={async () => {
+                        try {
+                          await updateJobStatus(job.id, s);
+                        } catch (e) {
+                          setActionError(e instanceof Error ? e.message : "Status update failed — please try again.");
+                        }
+                      }}
                       className="rounded-md border border-border bg-background px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:border-primary hover:text-primary"
                     >
                       Mark {s === "EnRoute" ? "En Route" : s === "OnScene" ? "On Scene" : "Complete"}
                     </button>
                   ))}
                 </div>
+              )}
+              {actionError && (
+                <div className="mt-2 text-[11px] text-urgent">{actionError}</div>
               )}
               <div className="mt-3 rounded-md border border-border bg-background p-3">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -534,14 +526,10 @@ export function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void
             >
               Close
             </button>
-            <button
-              onClick={genInvoice}
-              disabled={invoiced}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:bg-primary/90 disabled:opacity-60"
-            >
+            <div className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-muted-foreground opacity-60 cursor-not-allowed select-none">
               <FileText className="h-4 w-4" />
-              {invoiced ? "Invoice generated" : "Generate Invoice"}
-            </button>
+              Invoice generation not enabled yet
+            </div>
           </div>
         </div>
       </div>
