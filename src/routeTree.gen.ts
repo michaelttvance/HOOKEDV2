@@ -20,6 +20,7 @@ import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as CommandCenterAdminRouteImport } from './routes/command-center-admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -43,6 +44,8 @@ import { Route as ApiPublicTwilioVoiceRouteImport } from './routes/api/public/tw
 import { Route as ApiPublicTwilioSmsRouteImport } from './routes/api/public/twilio-sms'
 import { Route as ApiPublicInboundEmailRouteImport } from './routes/api/public/inbound-email'
 import { Route as ApiPublicApprovalActionRouteImport } from './routes/api/public/approval-action'
+import { Route as ApiCommandCenterStatusRouteImport } from './routes/api/command-center/status'
+import { Route as ApiCommandCenterActionRouteImport } from './routes/api/command-center/action'
 
 const TrialExpiredRoute = TrialExpiredRouteImport.update({
   id: '/trial-expired',
@@ -97,6 +100,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommandCenterAdminRoute = CommandCenterAdminRouteImport.update({
+  id: '/command-center-admin',
+  path: '/command-center-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -215,6 +223,16 @@ const ApiPublicApprovalActionRoute = ApiPublicApprovalActionRouteImport.update({
   path: '/api/public/approval-action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommandCenterStatusRoute = ApiCommandCenterStatusRouteImport.update({
+  id: '/api/command-center/status',
+  path: '/api/command-center/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCommandCenterActionRoute = ApiCommandCenterActionRouteImport.update({
+  id: '/api/command-center/action',
+  path: '/api/command-center/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -222,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/command-center-admin': typeof CommandCenterAdminRoute
   '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
@@ -244,6 +263,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
   '/track/$jobId': typeof TrackJobIdRoute
+  '/api/command-center/action': typeof ApiCommandCenterActionRoute
+  '/api/command-center/status': typeof ApiCommandCenterStatusRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
@@ -257,6 +278,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/command-center-admin': typeof CommandCenterAdminRoute
   '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
@@ -279,6 +301,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
   '/track/$jobId': typeof TrackJobIdRoute
+  '/api/command-center/action': typeof ApiCommandCenterActionRoute
+  '/api/command-center/status': typeof ApiCommandCenterStatusRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
@@ -294,6 +318,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/command-center-admin': typeof CommandCenterAdminRoute
   '/demo': typeof DemoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
@@ -316,6 +341,8 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/request/$companyId': typeof RequestCompanyIdRoute
   '/track/$jobId': typeof TrackJobIdRoute
+  '/api/command-center/action': typeof ApiCommandCenterActionRoute
+  '/api/command-center/status': typeof ApiCommandCenterStatusRoute
   '/api/public/approval-action': typeof ApiPublicApprovalActionRoute
   '/api/public/inbound-email': typeof ApiPublicInboundEmailRoute
   '/api/public/twilio-sms': typeof ApiPublicTwilioSmsRoute
@@ -331,6 +358,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/command-center-admin'
     | '/demo'
     | '/forgot-password'
     | '/founder'
@@ -353,6 +381,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/request/$companyId'
     | '/track/$jobId'
+    | '/api/command-center/action'
+    | '/api/command-center/status'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/api/public/twilio-sms'
@@ -366,6 +396,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/command-center-admin'
     | '/demo'
     | '/forgot-password'
     | '/founder'
@@ -388,6 +419,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/request/$companyId'
     | '/track/$jobId'
+    | '/api/command-center/action'
+    | '/api/command-center/status'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/api/public/twilio-sms'
@@ -402,6 +435,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/apply'
     | '/auth'
+    | '/command-center-admin'
     | '/demo'
     | '/forgot-password'
     | '/founder'
@@ -424,6 +458,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/request/$companyId'
     | '/track/$jobId'
+    | '/api/command-center/action'
+    | '/api/command-center/status'
     | '/api/public/approval-action'
     | '/api/public/inbound-email'
     | '/api/public/twilio-sms'
@@ -439,6 +475,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
+  CommandCenterAdminRoute: typeof CommandCenterAdminRoute
   DemoRoute: typeof DemoRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FounderRoute: typeof FounderRoute
@@ -452,6 +489,8 @@ export interface RootRouteChildren {
   TrialExpiredRoute: typeof TrialExpiredRoute
   RequestCompanyIdRoute: typeof RequestCompanyIdRoute
   TrackJobIdRoute: typeof TrackJobIdRoute
+  ApiCommandCenterActionRoute: typeof ApiCommandCenterActionRoute
+  ApiCommandCenterStatusRoute: typeof ApiCommandCenterStatusRoute
   ApiPublicApprovalActionRoute: typeof ApiPublicApprovalActionRoute
   ApiPublicInboundEmailRoute: typeof ApiPublicInboundEmailRoute
   ApiPublicTwilioSmsRoute: typeof ApiPublicTwilioSmsRoute
@@ -537,6 +576,13 @@ declare module '@tanstack/react-router' {
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/command-center-admin': {
+      id: '/command-center-admin'
+      path: '/command-center-admin'
+      fullPath: '/command-center-admin'
+      preLoaderRoute: typeof CommandCenterAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -700,6 +746,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicApprovalActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/command-center/status': {
+      id: '/api/command-center/status'
+      path: '/api/command-center/status'
+      fullPath: '/api/command-center/status'
+      preLoaderRoute: typeof ApiCommandCenterStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/command-center/action': {
+      id: '/api/command-center/action'
+      path: '/api/command-center/action'
+      fullPath: '/api/command-center/action'
+      preLoaderRoute: typeof ApiCommandCenterActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -737,6 +797,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
+  CommandCenterAdminRoute: CommandCenterAdminRoute,
   DemoRoute: DemoRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FounderRoute: FounderRoute,
@@ -750,6 +811,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrialExpiredRoute: TrialExpiredRoute,
   RequestCompanyIdRoute: RequestCompanyIdRoute,
   TrackJobIdRoute: TrackJobIdRoute,
+  ApiCommandCenterActionRoute: ApiCommandCenterActionRoute,
+  ApiCommandCenterStatusRoute: ApiCommandCenterStatusRoute,
   ApiPublicApprovalActionRoute: ApiPublicApprovalActionRoute,
   ApiPublicInboundEmailRoute: ApiPublicInboundEmailRoute,
   ApiPublicTwilioSmsRoute: ApiPublicTwilioSmsRoute,
@@ -760,3 +823,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
