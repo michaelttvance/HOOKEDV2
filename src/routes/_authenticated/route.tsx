@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated")({
     if (status === "rejected") throw redirect({ to: "/rejected" });
 
     // Gate by trial expiration (super admin is exempt)
-    const isSuperAdmin = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"].includes(
+    const isSuperAdmin = ["mike@hookaidashboard.com", "michaelttvance@gmail.com", "michaelthomasvance@gmail.com"].includes(
       (data.user.email ?? "").toLowerCase(),
     );
     if (!isSuperAdmin) {
@@ -100,7 +100,7 @@ const NAV_DISPATCHER = [
 
 const NAV_DRIVER = [{ to: "/driver", label: "My Job", icon: Smartphone }] as const;
 
-const ADMIN_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com"];
+const ADMIN_EMAILS = ["mike@hookaidashboard.com", "michaelttvance@gmail.com", "michaelthomasvance@gmail.com"];
 
 function AppShell() {
   const [aiOpen, setAiOpen] = useState(true);
