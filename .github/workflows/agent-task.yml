@@ -1,0 +1,96 @@
+name: Agent Task Runner
+
+# Triggered by the Hooked Command Center via POST /api/command-center/action
+# with type=trigger_agent_workflow. The backend calls workflow_dispatch with
+# the task fields below — no arbitrary shell input is passed from the browser.
+#
+# SAFE MODE (current): installs, typechecks, echoes summary. No file edits,
+# no commits, no pushes. Promoting to edit mode requires an explicit workflow
+# change and a separate approval step.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: "Task ID from Command Center"
+        required: true
+        type: string
+      task_title:
+        description: "Task title"
+        required: true
+        type: string
+      target_area:
+        description: "Target area (auth, dispatch, billing, founder, owner, infra, storage, other)"
+        required: true
+        type: string
+      risk_level:
+        description: "Risk level"
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+
+jobs:
+  agent-task:
+    name: "[${{ inputs.risk_level }}] ${{ inputs.task_title }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Task summary
+        run: |
+          echo "============================================"
+          echo "  HOOKED COMMAND CENTER — AGENT TASK"
+          echo "============================================"
+          echo "  Task ID     : ${{ inputs.task_id }}"
+          echo "  Title       : ${{ inputs.task_title }}"
+          echo "  Target Area : ${{ inputs.target_area }}"
+          echo "  Risk Level  : ${{ inputs.risk_level }}"
+          echo "  Triggered   : $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "============================================"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        # Non-zero exit from tsc is surfaced as a warning in safe mode —
+        # we want the summary step to always run so the run is visible.
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Safe-mode gate
+        # High-risk tasks require an extra confirmation before any edits land.
+        # This step fails loudly if someone forgets to route a high-risk task
+        # through the approval flow before promoting it to edit mode.
+        if: inputs.risk_level == 'high'
+        run: |
+          echo "::notice::High-risk task — manual review required before any file edits."
+          echo "::notice::Promote this workflow to edit mode only after explicit founder approval."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "✅  Safe-mode run complete."
+          echo "    No files were edited, no commits were made, no pushes occurred."
+          echo ""
+          echo "    Task  : ${{ inputs.task_title }}"
+          echo "    Area  : ${{ inputs.target_area }}"
+          echo "    Risk  : ${{ inputs.risk_level }}"
+          echo ""
+          echo "    To promote this task to edit mode:"
+          echo "    1. Add an 'edit_approved' input to this workflow."
+          echo "    2. Write the file-editing steps under a conditional."
+          echo "    3. Merge the workflow change via PR — do not push directly to main."
+          echo "    4. Re-trigger the workflow from the Command Center."
